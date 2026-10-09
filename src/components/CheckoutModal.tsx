@@ -1,13 +1,21 @@
 import React, { useState } from 'react';
-import { X, Check, ShieldCheck, MessageCircle, Phone, User, Sparkles } from 'lucide-react';
+import {
+  X,
+  Check,
+  ShieldCheck,
+  MessageCircle,
+  Phone,
+  User,
+  Sparkles
+} from 'lucide-react';
 import { CartItem, Order } from '../types';
-import { FONT_OPTIONS } from '../data/products';
-import { addOrderToFirestore } from '../services/firebase';
+import { FONT_OPTIONS } from '../data/fonts';
+import { saveOrder } from '../services/orders';
 
 interface CheckoutModalProps {
   isOpen: boolean;
   onClose: () => void;
-  cartItems: CartItem[];
+  cartItems: CartItem[]; // Contiene la pieza única a pagar
   onUpdateQuantity: (cartId: string, delta: number) => void;
   onRemoveItem: (cartId: string) => void;
   onClearCart: () => void;
@@ -23,6 +31,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   const [orderComplete, setOrderComplete] = useState(false);
   const [createdOrder, setCreatedOrder] = useState<Order | null>(null);
 
+  // Datos del cliente
   const [customerName, setCustomerName] = useState('');
   const [customerWhatsApp, setCustomerWhatsApp] = useState('');
   const [orderNotes, setOrderNotes] = useState('');
@@ -30,6 +39,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
   if (!isOpen) return null;
 
+  // Cálculos directos
   const subtotal = cartItems.reduce((acc, item) => acc + item.unitPrice * item.quantity, 0);
   const shipping = subtotal > 75 || subtotal === 0 ? 0 : 7.95;
   const total = Math.max(0, subtotal + shipping);
@@ -56,71 +66,58 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       if (item.customization.customText?.trim()) {
         msg += `   🧵 *Tono texto:* ${item.customization.textColor}\n`;
       }
+      if (item.customization.backgroundImageUrl) {
+        msg += `   🖼️ *Fondo:* [Imagen personalizada cargada plasmada tal cual]\n`;
+      }
       msg += `   💰 *$${(item.unitPrice * item.quantity).toFixed(2)}*\n`;
     });
 
-    if (order.notes) msg += `\n📝 *Notas especiales:* ${order.notes}\n`;
+    if (order.notes) {
+      msg += `\n📝 *Notas especiales:* ${order.notes}\n`;
+    }
+
     msg += `\n💵 *Total a pagar:* $${order.total.toFixed(2)}\n`;
     msg += `\n_Enviado desde el estudio interactivo YA&FE Atelier_`;
 
     return encodeURIComponent(msg);
   };
 
-  const handleCompleteOrder = async (e: React.FormEvent) => {
+  const handleCompleteOrder = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!customerName.trim() || !customerWhatsApp.trim()) {
-      setFormError('Por favor ingresa tu nombre y WhatsApp completos.');
+    if (!customerName.trim()) {
+      setFormError('Por favor ingresa tu nombre completo.');
+      return;
+    }
+    if (!customerWhatsApp.trim() || customerWhatsApp.trim().length < 8) {
+      setFormError('Por favor ingresa tu número de WhatsApp válido.');
       return;
     }
 
     setFormError('');
     setIsCheckingOut(true);
 
-    const orderData = {
-      product: cartItems[0].product.name,
-      price: total,
-      customization: {
-        text: cartItems[0].customization.customText,
-        color: cartItems[0].customization.textColor,
-        font: cartItems[0].customization.fontId,
-        uploadedImage: cartItems[0].customization.backgroundImageUrl
-      },
-      customer: {
-        name: customerName.trim(),
-        whatsapp: customerWhatsApp.trim(),
-        address: 'Retiro en Atelier',
-        deliveryDate: new Date(Date.now() + 86400000 * 3).toISOString().split('T')[0],
-        giftNote: orderNotes.trim()
-      },
-      mailchimpSubscribed: true,
-      status: 'Pending' as const,
-      createdAt: new Date().toISOString()
+    const newOrder: Order = {
+      id: `YF-${Math.floor(1000 + Math.random() * 9000)}`,
+      customerName: customerName.trim(),
+      customerWhatsApp: customerWhatsApp.trim(),
+      notes: orderNotes.trim() || undefined,
+      items: [...cartItems],
+      subtotal,
+      shipping,
+      total,
+      status: 'pending',
+      createdAt: new Date().toISOString(),
     };
 
-    try {
-      const newOrderId = await addOrderToFirestore(orderData);
-      
-      const newOrderForWa: Order = {
-        id: newOrderId,
-        customerName: customerName.trim(),
-        customerWhatsApp: customerWhatsApp.trim(),
-        notes: orderNotes.trim() || undefined,
-        items: [...cartItems],
-        subtotal,
-        shipping,
-        total,
-        status: 'pending',
-        createdAt: new Date().toISOString(),
-      };
+    // Guarda la orden en el localStorage para que tu panel de Admin la detecte
+    saveOrder(newOrder);
 
+    setTimeout(() => {
       setIsCheckingOut(false);
-      setCreatedOrder(newOrderForWa);
+      setCreatedOrder(newOrder);
       setOrderComplete(true);
       onClearCart();
-    } catch (err) {
-      setIsCheckingOut(false);
-      setFormError('Error al guardar el pedido. Intenta nuevamente.');
-    }
+    }, 900);
   };
 
   const openWhatsAppDirect = () => {
@@ -140,32 +137,51 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden">
-      <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-xs transition-opacity" onClick={onClose} />
+      {/* Backdrop oscuro */}
+      <div
+        className="fixed inset-0 bg-stone-900/60 backdrop-blur-xs transition-opacity"
+        onClick={onClose}
+      />
+      
       <div className="fixed inset-y-0 right-0 flex max-w-full pl-10">
         <div className="w-screen max-w-lg bg-[#FAF7F5] shadow-2xl flex flex-col justify-between">
+          
+          {/* Header */}
           <div className="border-b border-stone-200/80 px-6 py-4 bg-white">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Sparkles className="h-5 w-5 text-stone-900" />
-                <h3 className="font-serif text-xl font-normal text-stone-900">Finalizar Pedido Atelier</h3>
+                <h3 className="font-serif text-xl font-normal text-stone-900">
+                  Finalizar Pedido Atelier
+                </h3>
               </div>
-              <button onClick={onClose} className="rounded-lg p-1.5 text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors">
+              <button
+                onClick={onClose}
+                className="rounded-lg p-1.5 text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors"
+              >
                 <X className="h-5 w-5" />
               </button>
             </div>
           </div>
 
+          {/* Body Content */}
           <div className="flex-1 overflow-y-auto px-6 py-5">
             {orderComplete && createdOrder ? (
+              /* Pantalla de Éxito / Enviar a WhatsApp */
               <div className="flex flex-col items-center justify-center text-center py-6">
                 <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 mb-3 shadow-inner">
                   <Check className="h-8 w-8" />
                 </div>
-                <h4 className="font-serif text-2xl font-medium text-stone-900">¡Pedido Registrado con Éxito!</h4>
+                <h4 className="font-serif text-2xl font-medium text-stone-900">
+                  ¡Pedido Registrado con Éxito!
+                </h4>
                 <p className="mt-1.5 text-xs text-stone-600 max-w-sm leading-relaxed">
-                  Gracias <strong className="text-stone-900">{createdOrder.customerName}</strong>. Tu diseño ha sido guardado. Para acelerar la producción de tu grabado, envíanos la confirmación a WhatsApp.
+                  Gracias <strong className="text-stone-900">{createdOrder.customerName}</strong>. Tu diseño ha sido guardado en el sistema del atelier. Para acelerar la producción de tu grabado, envíanos la confirmación a WhatsApp con un solo clic.
                 </p>
-                <button onClick={openWhatsAppDirect} className="mt-5 flex w-full items-center justify-center gap-2.5 rounded-2xl bg-emerald-600 py-4 px-6 text-sm font-semibold text-white shadow-lg hover:bg-emerald-700 transition-all">
+                <button
+                  onClick={openWhatsAppDirect}
+                  className="mt-5 flex w-full items-center justify-center gap-2.5 rounded-2xl bg-emerald-600 py-4 px-6 text-sm font-semibold text-white shadow-lg hover:bg-emerald-700 active:scale-[0.99] transition-all cursor-pointer"
+                >
                   <MessageCircle className="h-5 w-5" />
                   <span>Enviar Detalles a WhatsApp Ahora</span>
                 </button>
@@ -175,42 +191,91 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                     <strong className="text-stone-900 font-mono">#{createdOrder.id}</strong>
                   </div>
                   <div className="flex justify-between text-stone-500">
+                    <span>Cliente:</span>
+                    <span className="text-stone-800 font-medium">{createdOrder.customerName}</span>
+                  </div>
+                  <div className="flex justify-between text-stone-500">
                     <span>Total:</span>
-                    <strong className="text-emerald-700 font-serif text-sm">${createdOrder.total.toFixed(2)}</strong>
+                    <strong className="text-emerald-700 font-serif text-sm">
+                      ${createdOrder.total.toFixed(2)}
+                    </strong>
                   </div>
                 </div>
-                <button onClick={resetAll} className="mt-5 w-full rounded-2xl border border-stone-300 bg-white py-3 text-xs font-semibold uppercase text-stone-800 hover:bg-stone-50 transition-colors">
+                <button
+                  onClick={resetAll}
+                  className="mt-5 w-full rounded-2xl border border-stone-300 bg-white py-3 text-xs font-semibold uppercase tracking-wider text-stone-800 hover:bg-stone-50 transition-colors"
+                >
                   Seguir Diseñando en el Estudio
                 </button>
               </div>
             ) : (
               <div className="space-y-5">
+                {/* Resumen del Artículo a Fabricar (Sin botones de cantidad ni borrar) */}
                 <div className="space-y-3">
-                  <span className="text-[11px] font-semibold uppercase tracking-wider text-stone-400 block">Tu Diseño a Fabricar</span>
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-stone-400 block">
+                    Tu Diseño a Fabricar
+                  </span>
                   {cartItems.map((item) => {
                     const font = FONT_OPTIONS.find((f) => f.id === item.customization.fontId) || FONT_OPTIONS[0];
                     return (
-                      <div key={item.cartId} className="rounded-2xl border border-stone-200/80 bg-white p-4 shadow-2xs flex gap-4">
-                        <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl shadow-inner border border-stone-200 overflow-hidden" style={{ backgroundColor: item.customization.productColor }}>
+                      <div
+                        key={item.cartId}
+                        className="rounded-2xl border border-stone-200/80 bg-white p-4 shadow-2xs flex gap-4"
+                      >
+                        {/* Thumbnail */}
+                        <div
+                          className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl shadow-inner border border-stone-200 overflow-hidden"
+                          style={{ backgroundColor: item.customization.productColor }}
+                        >
                           {item.customization.backgroundImageUrl ? (
-                            <img src={item.customization.backgroundImageUrl} alt="Custom wrap" className="h-full w-full object-cover" />
+                            <img
+                              src={item.customization.backgroundImageUrl}
+                              alt="Custom wrap"
+                              className="h-full w-full object-cover"
+                            />
                           ) : (
-                            <span className="text-xs font-bold text-center px-1" style={{ fontFamily: font.family, color: item.customization.textColor }}>
+                            <span
+                              className="text-xs font-bold text-center px-1"
+                              style={{
+                                fontFamily: font.family,
+                                color: item.customization.textColor,
+                              }}
+                            >
                               {item.customization.customText?.slice(0, 5) || 'Y&F'}
                             </span>
                           )}
                         </div>
+                        {/* Info de la pieza */}
                         <div className="flex-1 min-w-0">
-                          <h4 className="font-serif text-sm font-medium text-stone-900 truncate">{item.product.name}</h4>
+                          <h4 className="font-serif text-sm font-medium text-stone-900 truncate">
+                            {item.product.name} (x{item.quantity})
+                          </h4>
                           <div className="mt-1 space-y-0.5 text-[11px] text-stone-500">
                             {item.customization.customText?.trim() ? (
-                              <p>Grabado: <strong className="text-stone-800">"{item.customization.customText}"</strong></p>
+                              <>
+                                <p>
+                                  Grabado:{' '}
+                                  <strong className="text-stone-800">
+                                    "{item.customization.customText}"
+                                  </strong>
+                                </p>
+                                <p>
+                                  Tipografía: <span className="font-medium text-stone-700">{font.name}</span>
+                                </p>
+                              </>
                             ) : (
-                              <p className="text-emerald-700 font-medium">[Sin texto - Diseño liso]</p>
+                              <p className="text-emerald-700 font-medium">
+                                [Sin texto - Diseño liso / Solo imagen]
+                              </p>
+                            )}
+                            {item.customization.backgroundImageUrl && (
+                              <p className="text-[#B76E79] font-medium">Fondo personalizado incluido</p>
                             )}
                           </div>
                           <div className="mt-2 text-right">
-                            <span className="font-serif text-sm font-semibold text-stone-900">${(item.unitPrice * item.quantity).toFixed(2)}</span>
+                            <span className="font-serif text-sm font-semibold text-stone-900">
+                              ${(item.unitPrice * item.quantity).toFixed(2)}
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -218,35 +283,69 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                   })}
                 </div>
 
+                {/* Formulario de Contacto */}
                 <div className="rounded-2xl border border-stone-200 bg-white p-4 space-y-3 shadow-2xs">
                   <div className="flex items-center gap-2 border-b border-stone-100 pb-2">
                     <MessageCircle className="h-4 w-4 text-emerald-600" />
-                    <span className="text-xs font-semibold uppercase text-stone-800">Datos de Contacto</span>
+                    <span className="text-xs font-semibold uppercase tracking-wider text-stone-800">
+                      Datos de Contacto
+                    </span>
                   </div>
                   <div>
-                    <label className="block text-[11px] font-semibold text-stone-700 uppercase mb-1">Tu Nombre Completo <span className="text-rose-500">*</span></label>
+                    <label className="block text-[11px] font-semibold text-stone-700 uppercase mb-1">
+                      Tu Nombre Completo <span className="text-rose-500">*</span>
+                    </label>
                     <div className="relative">
                       <User className="absolute left-3 top-2.5 h-4 w-4 text-stone-400" />
-                      <input type="text" required value={customerName} onChange={(e) => setCustomerName(e.target.value)} className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-stone-200 bg-stone-50 text-stone-800 focus:bg-white focus:outline-hidden" />
+                      <input
+                        type="text"
+                        required
+                        placeholder="ej. Sofia Alexandra Ortiz"
+                        value={customerName}
+                        onChange={(e) => setCustomerName(e.target.value)}
+                        className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-stone-200 bg-stone-50 text-stone-800 placeholder-stone-400 focus:bg-white focus:border-stone-400 focus:outline-hidden"
+                      />
                     </div>
                   </div>
                   <div>
-                    <label className="block text-[11px] font-semibold text-stone-700 uppercase mb-1">WhatsApp <span className="text-rose-500">*</span></label>
+                    <label className="block text-[11px] font-semibold text-stone-700 uppercase mb-1">
+                      Tu Número de WhatsApp <span className="text-rose-500">*</span>
+                    </label>
                     <div className="relative">
                       <Phone className="absolute left-3 top-2.5 h-4 w-4 text-stone-400" />
-                      <input type="tel" required value={customerWhatsApp} onChange={(e) => setCustomerWhatsApp(e.target.value)} className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-stone-200 bg-stone-50 text-stone-800 focus:bg-white focus:outline-hidden" />
+                      <input
+                        type="tel"
+                        required
+                        placeholder="ej. +52 55 1234 5678"
+                        value={customerWhatsApp}
+                        onChange={(e) => setCustomerWhatsApp(e.target.value)}
+                        className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-stone-200 bg-stone-50 text-stone-800 placeholder-stone-400 focus:bg-white focus:border-stone-400 focus:outline-hidden"
+                      />
                     </div>
                   </div>
                   <div>
-                    <label className="block text-[11px] font-semibold text-stone-700 uppercase mb-1">Notas Especiales</label>
-                    <input type="text" value={orderNotes} onChange={(e) => setOrderNotes(e.target.value)} className="w-full px-3 py-2 text-xs rounded-xl border border-stone-200 bg-stone-50 text-stone-800 focus:bg-white focus:outline-hidden" />
+                    <label className="block text-[11px] font-semibold text-stone-700 uppercase mb-1">
+                      Notas o Indicaciones Especiales <span className="text-stone-400 font-normal">(Opcional)</span>
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="ej. Para regalo, envolver en listón..."
+                      value={orderNotes}
+                      onChange={(e) => setOrderNotes(e.target.value)}
+                      className="w-full px-3 py-2 text-xs rounded-xl border border-stone-200 bg-stone-50 text-stone-800 placeholder-stone-400 focus:bg-white focus:border-stone-400 focus:outline-hidden"
+                    />
                   </div>
-                  {formError && <div className="p-2 rounded-lg bg-rose-50 border border-rose-200 text-[11px] text-rose-700 font-medium">{formError}</div>}
+                  {formError && (
+                    <div className="p-2 rounded-lg bg-rose-50 border border-rose-200 text-[11px] text-rose-700 font-medium">
+                      {formError}
+                    </div>
+                  )}
                 </div>
               </div>
             )}
           </div>
 
+          {/* Footer Summary & Checkout Button */}
           {!orderComplete && cartItems.length > 0 && (
             <div className="border-t border-stone-200/80 bg-white p-5 space-y-3">
               <div className="space-y-1.5 text-xs text-stone-600">
@@ -255,20 +354,38 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                   <span className="font-medium text-stone-900">${subtotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Empaque de Regalo</span>
+                  <span>Empaque de Regalo con Cera</span>
                   <span className="text-emerald-700 font-medium">Gratis</span>
                 </div>
+                {shipping > 0 && (
+                  <div className="flex justify-between">
+                    <span>Envío</span>
+                    <span>${shipping.toFixed(2)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between border-t border-stone-100 pt-2 text-sm font-semibold text-stone-900">
                   <span className="font-serif text-base">Total Final</span>
                   <span className="font-serif text-base font-bold">${total.toFixed(2)}</span>
                 </div>
               </div>
-              <button type="button" onClick={handleCompleteOrder} disabled={isCheckingOut} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-stone-900 py-3.5 text-xs font-semibold uppercase text-white shadow-lg hover:bg-stone-800 disabled:opacity-60">
-                {isCheckingOut ? <span>Registrando...</span> : <><MessageCircle className="h-4 w-4 text-emerald-400" /><span>Confirmar Pedido - ${total.toFixed(2)}</span></>}
+              <button
+                type="button"
+                onClick={handleCompleteOrder}
+                disabled={isCheckingOut}
+                className="flex w-full items-center justify-center gap-2 rounded-2xl bg-stone-900 py-3.5 text-xs font-semibold uppercase tracking-wider text-white shadow-lg transition-all hover:bg-stone-800 active:scale-[0.99] disabled:opacity-60 cursor-pointer"
+              >
+                {isCheckingOut ? (
+                  <span>Registrando Pedido en Atelier...</span>
+                ) : (
+                  <>
+                    <MessageCircle className="h-4 w-4 text-emerald-400" />
+                    <span>Confirmar Pedido - ${total.toFixed(2)}</span>
+                  </>
+                )}
               </button>
               <div className="flex items-center justify-center gap-2 text-[10px] text-stone-500 pt-0.5">
                 <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
-                <span>Atelier Directo • Grabado garantizado</span>
+                <span>Atelier Directo • Grabado permanente garantizado</span>
               </div>
             </div>
           )}

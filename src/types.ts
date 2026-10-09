@@ -1,4 +1,4 @@
-export type ProductType = 'tumbler' | 'apron' | 'tote' | 'mug';
+export type ProductType = 'tumbler' | 'apron' | 'tote' | 'mug' | 'shirt';
 
 export interface FontOption {
   id: string;
@@ -34,7 +34,7 @@ export interface ProductCustomization {
   productColor: string;
   textColor: string;
   textPlacement?: 'vertical' | 'horizontal' | 'chest' | 'pocket' | 'center';
-  fontSize: number; // 1 to 5 scale
+  fontSize: number; 
   backgroundImageUrl?: string | null;
   selectedPatternId?: string;
   metallicFinish?: 'rose-gold' | 'silver' | 'gold' | 'matte' | 'laser-etched';

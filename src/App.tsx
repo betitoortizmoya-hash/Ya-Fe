@@ -7,7 +7,7 @@ import { CatalogSection } from './components/CatalogSection';
 import { DistinctionBanner } from './components/DistinctionBanner';
 import { Footer } from './components/Footer';
 import { CheckoutModal } from './components/CheckoutModal';
-import { AdminPanel } from './components/AdminPanel';
+import AdminPanel from './components/AdminPanel';
 import { CartItem, Product, ProductCustomization } from './types';
 
 export default function App() {

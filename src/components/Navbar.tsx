@@ -46,6 +46,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         <div className="hidden lg:flex items-center space-x-8 text-xs font-semibold uppercase tracking-wider text-stone-600">
           <button onClick={() => scrollToCustomizer('tumbler-sip')} className="hover:text-stone-900 transition-colors cursor-pointer">Termos</button>
           <button onClick={() => scrollToCustomizer('apron-artisan')} className="hover:text-stone-900 transition-colors cursor-pointer">Mandiles</button>
+          <button onClick={() => scrollToCustomizer('shirt-polo')} className="hover:text-stone-900 transition-colors cursor-pointer">Camisetas</button>
           <button onClick={scrollToCatalog} className="hover:text-stone-900 transition-colors cursor-pointer">Catálogo</button>
         </div>
 

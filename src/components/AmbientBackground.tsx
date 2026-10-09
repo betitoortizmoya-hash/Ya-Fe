@@ -73,7 +73,7 @@ export const AmbientBackground: React.FC = () => {
     };
 
     const currentThemeConfig = THEMES[activeTheme as keyof typeof THEMES] || THEMES.spring;
-    const particleCount = Math.min(35, Math.max(20, Math.floor(width / 45)));
+    const particleCount = Math.min(30, Math.max(16, Math.floor(width / 50)));
     const particles: BlossomParticle[] = [];
 
     const createParticle = (initialY?: number): BlossomParticle => {
@@ -102,18 +102,20 @@ export const AmbientBackground: React.FC = () => {
       return {
         x: Math.random() * width,
         y: initialY !== undefined ? initialY : Math.random() * height,
-        // Emojis mucho más grandes (25 a 45px), flores y pétalos mantienen su tamaño delicado
-        size: isEmojiTheme ? Math.random() * 20 + 25 : (type === 'flower' ? Math.random() * 12 + 14 : Math.random() * 9 + 8),
-        speedY: Math.random() * 0.6 + 0.3,
-        speedX: (Math.random() - 0.5) * 0.4 + 0.2,
+        // Tamaño ajustado para ser visible pero elegante
+        size: isEmojiTheme ? Math.random() * 16 + 22 : (type === 'flower' ? Math.random() * 8 + 8 : Math.random() * 7 + 6),
+        
+        // Físicas restauradas EXACTAMENTE a las originales para máxima fluidez
+        speedY: Math.random() * 0.45 + 0.25,
+        speedX: (Math.random() - 0.5) * 0.3 + 0.15,
         angle: Math.random() * Math.PI * 2,
-        rotationSpeed: (Math.random() - 0.5) * 0.03,
-        opacity: Math.random() * 0.4 + 0.5,
+        rotationSpeed: (Math.random() - 0.5) * 0.02,
+        opacity: Math.random() * 0.35 + 0.45,
         type,
         emojiValue,
         color,
-        swayAmplitude: Math.random() * 2 + 1,
-        swayFrequency: Math.random() * 0.02 + 0.01,
+        swayAmplitude: Math.random() * 1.5 + 0.8,
+        swayFrequency: Math.random() * 0.015 + 0.008,
         timeOffset: Math.random() * 1000,
       };
     };
@@ -125,24 +127,24 @@ export const AmbientBackground: React.FC = () => {
     const drawPetal = (c: CanvasRenderingContext2D, size: number) => {
       c.beginPath();
       c.moveTo(0, -size);
-      c.bezierCurveTo(size * 0.9, -size * 0.7, size * 0.9, size * 0.7, 0, size);
-      c.bezierCurveTo(-size * 0.9, size * 0.7, -size * 0.9, -size * 0.7, 0, -size);
+      c.bezierCurveTo(size * 0.8, -size * 0.6, size * 0.8, size * 0.6, 0, size);
+      c.bezierCurveTo(-size * 0.8, size * 0.6, -size * 0.8, -size * 0.6, 0, -size);
       c.fill();
     };
 
     const drawTinyFlower = (c: CanvasRenderingContext2D, size: number) => {
       const petals = 5;
-      const petalSize = size * 0.45;
+      const petalSize = size * 0.42;
       for (let i = 0; i < petals; i++) {
         c.save();
         c.rotate((i * (Math.PI * 2)) / petals);
         c.beginPath();
-        c.ellipse(0, petalSize, petalSize * 0.6, petalSize * 0.9, 0, 0, Math.PI * 2);
+        c.ellipse(0, petalSize, petalSize * 0.55, petalSize * 0.85, 0, 0, Math.PI * 2);
         c.fill();
         c.restore();
       }
       c.beginPath();
-      c.arc(0, 0, size * 0.2, 0, Math.PI * 2);
+      c.arc(0, 0, size * 0.18, 0, Math.PI * 2);
       c.fillStyle = 'rgba(255, 220, 100, 0.9)'; 
       c.fill();
     };
@@ -174,7 +176,10 @@ export const AmbientBackground: React.FC = () => {
       ctx.clearRect(0, 0, width, height);
 
       particles.forEach((p, idx) => {
-        // Movimiento de empuje horizontal del viento (sway)
+        // Rotación continua y fluida para todos los elementos
+        p.angle += p.rotationSpeed;
+        
+        // Empuje de viento suave
         const sway = Math.sin((tick + p.timeOffset) * p.swayFrequency) * p.swayAmplitude;
         p.x += p.speedX + sway;
         p.y += p.speedY;
@@ -191,19 +196,7 @@ export const AmbientBackground: React.FC = () => {
 
         ctx.save();
         ctx.translate(p.x, p.y);
-        
-        // Rotación: Las flores dan vueltas completas, pero los emojis solo se mecen de lado a lado
-        let currentAngle = p.angle;
-        if (p.type === 'emoji') {
-          // Efecto de balanceo natural (mecedora) para los elementos temáticos
-          currentAngle = Math.sin((tick + p.timeOffset) * 0.015) * 0.4;
-        } else {
-          // Rotación normal para los pétalos
-          p.angle += p.rotationSpeed;
-          currentAngle = p.angle;
-        }
-        
-        ctx.rotate(currentAngle);
+        ctx.rotate(p.angle); // Rotación aplicada por igual
         ctx.globalAlpha = p.opacity;
 
         if (p.type === 'emoji' && p.emojiValue) {
@@ -237,7 +230,7 @@ export const AmbientBackground: React.FC = () => {
       <canvas
         ref={canvasRef}
         aria-hidden="true"
-        className="pointer-events-none fixed inset-0 z-0 h-full w-full opacity-90 transition-opacity duration-700"
+        className="pointer-events-none fixed inset-0 z-0 h-full w-full opacity-85 transition-opacity duration-700"
       />
       <button
         onClick={() => setIsEnabled(!isEnabled)}

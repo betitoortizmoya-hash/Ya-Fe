@@ -1,325 +1,214 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { motion } from 'motion/react';
-import { Product, ColorSwatch, FontOption } from '../types';
-import { PRODUCTS, COLOR_SWATCHES, FONT_OPTIONS } from '../data/products';
-import {
-  ZoomIn,
-  ZoomOut,
-  RotateCcw,
-  Sparkles,
-  Check,
-  X,
-  ShieldCheck,
-  Gift,
-  Palette,
-  Heart,
-  Truck,
-  Lock,
-  ArrowRight,
-  ImagePlus,
-  ArrowUp,
-  ArrowDown,
-  ArrowLeft,
-  ArrowRight as ArrowRightIcon
-} from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Sparkles, Type, Palette, Image as ImageIcon, RotateCcw, Check, Upload, Trash2, ZoomIn, ZoomOut, ChevronDown, Sliders, AlignVerticalJustifyCenter, AlignHorizontalJustifyCenter, ArrowRight } from 'lucide-react';
+import { Product, ProductCustomization } from '../types';
+import { PRODUCTS, TUMBLER_TEXTURE_PRESETS } from '../data/products';
+import { FONT_OPTIONS } from '../data/fonts';
+import { ApronMockup } from './mockups/ApronMockup';
+import { TumblerMockup } from './mockups/TumblerMockup';
+import { ToteMockup } from './mockups/ToteMockup';
+import { MugMockup } from './mockups/MugMockup';
 
 interface LiveCustomizerProps {
-  selectedProduct: Product;
-  onSelectProduct: (p: Product) => void;
-  customText: string;
-  setCustomText: (text: string) => void;
-  selectedColor: ColorSwatch;
-  setSelectedColor: (c: ColorSwatch) => void;
-  selectedFont: FontOption;
-  setSelectedFont: (f: FontOption) => void;
-  onProceedToCheckout: () => void;
+  selectedProductId: string;
+  onSelectProduct: (productId: string) => void;
+  onProceedToCheckout: (product: Product, customization: ProductCustomization, quantity: number) => void;
 }
 
-export default function LiveCustomizer({
-  selectedProduct,
-  onSelectProduct,
-  customText,
-  setCustomText,
-  selectedColor,
-  setSelectedColor,
-  selectedFont,
-  setSelectedFont,
-  onProceedToCheckout
-}: LiveCustomizerProps) {
-  const [zoomScale, setZoomScale] = useState(1);
-  const [positionX, setPositionX] = useState(0);
-  const [positionY, setPositionY] = useState(0);
-  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+export const LiveCustomizer: React.FC<LiveCustomizerProps> = ({ selectedProductId, onSelectProduct, onProceedToCheckout }) => {
+  const currentProduct = PRODUCTS.find((p) => p.id === selectedProductId) || PRODUCTS[0];
+  const [customization, setCustomization] = useState<ProductCustomization>({ ...currentProduct.defaultCustomization });
+  const [quantity, setQuantity] = useState(1);
+  const [isZoomed, setIsZoomed] = useState(false);
+  const [activeTab, setActiveTab] = useState<'text' | 'colors' | 'background' | 'placement'>('text');
+  const [isFontDropdownOpen, setIsFontDropdownOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Imágenes "limpias" sin el texto original (puedes cambiarlas luego por tus propias URLs)
-  const cleanTumblerImage = 'https://images.unsplash.com/photo-1614036417651-1d4ee5b4b1a4?auto=format&fit=crop&w=600&q=80'; // Vaso sin texto
-  const cleanApronImage = 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?auto=format&fit=crop&w=600&q=80'; // Mandil sin texto
+  React.useEffect(() => {
+    setCustomization({ ...currentProduct.defaultCustomization });
+    if (currentProduct.category === 'tumbler') setActiveTab('text');
+  }, [currentProduct.id]);
 
-  // Mostrar la imagen subida o la imagen limpia si es vaso o mandil
-  const displayImage = uploadedImage || 
-    (selectedProduct.id === 'tumbler' ? cleanTumblerImage : 
-     selectedProduct.id === 'apron' ? cleanApronImage : 
-     (selectedProduct.mockupImage || selectedProduct.image));
+  const currentFont = FONT_OPTIONS.find((f) => f.id === customization.fontId) || FONT_OPTIONS[0];
 
-  const customizationFee = 5.0;
-  const signatureRibbonFee = 3.0;
-  const totalPrice = selectedProduct.price + customizationFee + signatureRibbonFee;
-
-  // Reiniciar posiciones al cambiar de producto
-  useEffect(() => {
-    setPositionX(0);
-    setPositionY(0);
-    setUploadedImage(null);
-  }, [selectedProduct]);
-
-  const handleZoomIn = () => {
-    if (zoomScale < 1.35) setZoomScale((prev) => Math.min(prev + 0.15, 1.35));
-  };
-
-  const handleZoomOut = () => {
-    if (zoomScale > 0.85) setZoomScale((prev) => Math.max(prev - 0.15, 0.85));
-  };
-
-  const handleReset = () => {
-    setZoomScale(1);
-    setCustomText('Mario Alberto');
-    setSelectedColor(COLOR_SWATCHES[0]);
-    setSelectedFont(FONT_OPTIONS[0]);
-    setPositionX(0);
-    setPositionY(0);
-    setUploadedImage(null);
-  };
+  const handleTextChange = (text: string) => setCustomization((prev) => ({ ...prev, customText: text }));
+  const handleSecondaryTextChange = (text: string) => setCustomization((prev) => ({ ...prev, secondaryText: text }));
+  const handleFontSelect = (fontId: string) => { setCustomization((prev) => ({ ...prev, fontId })); setIsFontDropdownOpen(false); };
+  const handleProductColorSelect = (hex: string) => setCustomization((prev) => ({ ...prev, productColor: hex }));
+  const handleTextColorSelect = (hex: string) => setCustomization((prev) => ({ ...prev, textColor: hex }));
+  const handlePlacementChange = (placement: 'vertical' | 'horizontal' | 'chest' | 'pocket' | 'center') => setCustomization((prev) => ({ ...prev, textPlacement: placement }));
+  const handleFontSizeChange = (size: number) => setCustomization((prev) => ({ ...prev, fontSize: size }));
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setUploadedImage(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (uploadEvent) => {
+      setCustomization((prev) => ({ ...prev, backgroundImageUrl: uploadEvent.target?.result as string, selectedPatternId: 'custom' }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveImage = () => {
+    setCustomization((prev) => ({ ...prev, backgroundImageUrl: null, selectedPatternId: 'none' }));
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handlePatternSelect = (patternId: string) => {
+    setCustomization((prev) => ({ ...prev, selectedPatternId: patternId, backgroundImageUrl: null }));
+  };
+
+  const renderProductMockup = () => {
+    switch (currentProduct.category) {
+      case 'apron': return <ApronMockup customization={customization} isZoomed={isZoomed} />;
+      case 'tumbler': return <TumblerMockup customization={customization} isZoomed={isZoomed} showLifestyleBackground={true} />;
+      case 'tote': return <ToteMockup customization={customization} isZoomed={isZoomed} />;
+      case 'mug': return <MugMockup customization={customization} isZoomed={isZoomed} />;
+      default: return <TumblerMockup customization={customization} isZoomed={isZoomed} />;
     }
   };
 
-  const moveText = (direction: 'up' | 'down' | 'left' | 'right') => {
-    const step = 10;
-    if (direction === 'up') setPositionY(prev => prev - step);
-    if (direction === 'down') setPositionY(prev => prev + step);
-    if (direction === 'left') setPositionX(prev => prev - step);
-    if (direction === 'right') setPositionX(prev => prev + step);
-  };
-
   return (
-    <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 py-6 sm:py-10 w-full">
-      <div className="flex flex-wrap items-center justify-between gap-4 pb-6 border-b border-rose-100/60 mb-8">
-        <div className="flex items-center gap-3">
-          <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-rose-100 text-[#b90538] font-bold text-xs">01</span>
-          <div>
-            <p className="text-xs uppercase tracking-wider text-stone-500 font-semibold font-sans">Taller a Medida • Alta Definición</p>
-            <h1 className="font-serif-luxury text-2xl sm:text-3xl text-stone-900 font-normal">Estudio de Personalización en Vivo</h1>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <button onClick={handleReset} className="p-2 text-stone-500 hover:text-[#b90538] rounded-full hover:bg-stone-100 transition-colors" title="Reset Preview">
-            <RotateCcw className="w-4 h-4" />
-          </button>
-        </div>
+    <section id="customizer" className="relative mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+      <div className="mb-8 flex flex-col items-center text-center">
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-[#e8d5b5] bg-[#FBF7F2] px-3.5 py-1 text-xs font-semibold tracking-wider text-[#A66E53] uppercase">
+          <Sparkles className="h-3.5 w-3.5" /> Estudio Interactivo
+        </span>
+        <h2 className="mt-3 font-serif text-3xl font-normal tracking-tight text-stone-900 sm:text-4xl md:text-5xl">Diseña tu Pieza Única</h2>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* IZQUIERDA: Lienzo Interactivo */}
-        <div className="lg:col-span-7 flex flex-col gap-4">
-          <div className="relative w-full rounded-3xl bg-white shadow-xl border border-rose-100/80 p-6 sm:p-10 overflow-hidden flex flex-col items-center justify-center min-h-[520px] sm:min-h-[580px]">
-            
-            <div className="absolute top-5 left-6 right-6 flex items-center justify-between z-20">
-              <span className="px-3.5 py-1.5 rounded-full bg-white/80 backdrop-blur text-stone-700 text-xs font-semibold shadow-xs border border-stone-200/60">
-                {selectedProduct.name}
-              </span>
-              <div className="flex items-center gap-1.5 bg-white/80 backdrop-blur px-2 py-1 rounded-full shadow-xs border border-stone-200/50">
-                <button onClick={handleZoomOut} className="w-7 h-7 rounded-full flex items-center justify-center text-stone-600 hover:text-[#b90538]"><ZoomOut className="w-3.5 h-3.5" /></button>
-                <span className="text-xs text-stone-800 px-1 font-bold">{Math.round(zoomScale * 100)}%</span>
-                <button onClick={handleZoomIn} className="w-7 h-7 rounded-full flex items-center justify-center text-stone-600 hover:text-[#b90538]"><ZoomIn className="w-3.5 h-3.5" /></button>
-              </div>
-            </div>
-
-            {/* CONTENEDOR DEL LIENZO: Mantiene la imagen y el texto juntos */}
-            <div
-              className="relative w-full max-w-md aspect-[4/5] sm:aspect-square flex items-center justify-center rounded-2xl overflow-hidden shadow-inner transition-transform duration-300 ease-out"
-              style={{ transform: `scale(${zoomScale})` }}
-            >
-              {/* Imagen de fondo (reemplazable) */}
-              <div 
-                className="absolute inset-0 bg-cover bg-center transition-all duration-500"
-                style={{ backgroundImage: `url(${displayImage})` }}
-              />
-
-              {/* Botón para quitar imagen subida (si existe) */}
-              {uploadedImage && (
-                <button 
-                  onClick={() => setUploadedImage(null)} 
-                  className="absolute top-4 right-4 bg-white/90 text-red-500 rounded-full p-2 shadow-md z-30 hover:bg-red-50"
-                  title="Quitar fondo personalizado"
-                >
-                  <X className="w-4 h-4" />
+      <div className="overflow-hidden rounded-3xl border border-stone-200/80 bg-white/90 shadow-xl backdrop-blur-md">
+        <div className="border-b border-stone-100 bg-[#FAF7F4] px-4 py-3 sm:px-6">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+              {PRODUCTS.map((prod) => (
+                <button key={prod.id} onClick={() => onSelectProduct(prod.id)} className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs sm:text-sm font-medium transition-all ${selectedProductId === prod.id ? 'bg-stone-900 text-white shadow-sm' : 'bg-white/80 text-stone-600 hover:bg-white hover:text-stone-900 border border-stone-200/60'}`}>
+                  {prod.name}
                 </button>
-              )}
-
-              {/* Contenedor del Texto Movible DENTRO del lienzo */}
-              <motion.div
-                className="absolute flex flex-col items-center justify-center text-center px-4 z-20 cursor-move"
-                style={{ 
-                  transform: `translate(calc(-50% + ${positionX}px), calc(-50% + ${positionY}px))`,
-                  left: '50%',
-                  top: selectedProduct.id === 'tumbler' ? '50%' : '44%' // Centrado en el vaso
-                }}
-              >
-                {/* Texto Principal */}
-                <span
-                  className="text-2xl sm:text-4xl font-bold tracking-tight drop-shadow-md break-words max-w-[280px]"
-                  style={{ 
-                    color: selectedColor.hex, 
-                    fontFamily: selectedFont.fontFamily, 
-                    fontStyle: selectedFont.isItalic ? 'italic' : 'normal',
-                    lineHeight: '1.2'
-                  }}
-                >
-                  {customText.trim() ? customText : 'Mario Alberto'}
-                </span>
-                
-                {/* Sello Ya&Fe */}
-                <div className="mt-2 flex items-center gap-1.5 opacity-90 drop-shadow-sm" style={{ color: selectedColor.hex }}>
-                  <span className="inline-block w-6 h-0.5 rounded-full bg-current opacity-60" />
-                  <span className="text-[10px] uppercase tracking-widest font-semibold font-sans">YA&FE ATELIER</span>
-                  <span className="inline-block w-6 h-0.5 rounded-full bg-current opacity-60" />
-                </div>
-              </motion.div>
-              
-              {/* Reflejo opcional para dar volumen al vaso (solo se muestra si es vaso) */}
-              {selectedProduct.id === 'tumbler' && !uploadedImage && (
-                 <div className="absolute inset-0 bg-gradient-to-r from-black/10 via-transparent to-white/20 pointer-events-none mix-blend-overlay" />
-              )}
+              ))}
+            </div>
+            <div className="flex items-center gap-2">
+              <button onClick={() => setCustomization({ ...currentProduct.defaultCustomization })} className="flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-2.5 py-1.5 text-xs font-medium text-stone-600 hover:text-stone-900 transition-colors">
+                <RotateCcw className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Reset</span>
+              </button>
+              <button onClick={() => setIsZoomed(!isZoomed)} className="flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-2.5 py-1.5 text-xs font-medium text-stone-600 hover:text-stone-900 transition-colors">
+                {isZoomed ? <ZoomOut className="h-3.5 w-3.5" /> : <ZoomIn className="h-3.5 w-3.5" />} <span className="hidden sm:inline">Zoom</span>
+              </button>
             </div>
           </div>
         </div>
 
-        {/* DERECHA: Panel de Personalización */}
-        <div className="lg:col-span-5 flex flex-col gap-6">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-xl border border-rose-100/80 flex flex-col gap-6">
-            
-            <div className="flex flex-col gap-3">
-              <label className="text-sm font-bold text-stone-900 flex items-center gap-2">
-                <span className="w-5 h-5 rounded-full bg-[#b90538] text-white text-xs flex items-center justify-center font-bold">1</span>
-                Selecciona tu pieza de recuerdo
-              </label>
-              <div className="grid grid-cols-2 gap-2.5">
-                {PRODUCTS.map((prod) => (
-                  <button
-                    key={prod.id}
-                    onClick={() => onSelectProduct(prod)}
-                    className={`p-3 rounded-2xl text-left transition-all flex items-center gap-2.5 ${selectedProduct.id === prod.id ? 'bg-rose-50 border-2 border-[#b90538] shadow-xs' : 'bg-stone-50 hover:bg-stone-100 border border-stone-200/60'}`}
-                  >
-                    <div className="w-8 h-8 rounded-xl bg-white flex items-center justify-center shrink-0 border border-stone-200/40">
-                      <Sparkles className={`w-4 h-4 ${selectedProduct.id === prod.id ? 'text-[#b90538]' : 'text-stone-500'}`} />
-                    </div>
-                    <div className="flex flex-col min-w-0">
-                      <span className="text-xs font-bold text-stone-900 truncate">{prod.name.split(' ')[0]} {prod.name.split(' ')[1]}</span>
-                      <span className={`text-xs font-semibold ${selectedProduct.id === prod.id ? 'text-[#b90538]' : 'text-stone-500'}`}>${prod.price.toFixed(2)}</span>
-                    </div>
-                  </button>
-                ))}
-              </div>
+        <div className="grid grid-cols-1 lg:grid-cols-12 min-h-[580px]">
+          {/* LIENZO */}
+          <div className="relative flex flex-col items-center justify-center p-6 lg:col-span-7 bg-gradient-to-b from-[#FAF7F5] to-[#F5ECE8]/50 border-b lg:border-b-0 lg:border-r border-stone-100">
+            <div className="my-auto w-full py-4 flex items-center justify-center overflow-hidden">
+              {renderProductMockup()}
             </div>
+          </div>
 
-            <div className="flex flex-col gap-3">
-              <label className="text-sm font-bold text-stone-900 flex items-center gap-2">
-                <span className="w-5 h-5 rounded-full bg-[#b90538] text-white text-xs flex items-center justify-center font-bold">2</span>
-                Nombres, monograma o dedicatoria
-              </label>
-              <input
-                type="text"
-                maxLength={40}
-                value={customText}
-                onChange={(e) => setCustomText(e.target.value)}
-                placeholder="Ej. Mario Alberto"
-                className="w-full px-4 py-3 rounded-2xl bg-stone-50 text-stone-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#b90538]/40 border border-stone-200 transition-all shadow-inner"
-              />
-              <div className="flex items-center justify-between bg-stone-50 p-3 rounded-xl border border-stone-200 mt-1">
-                <span className="text-xs font-bold text-stone-700">Ajustar Posición del Texto:</span>
-                <div className="flex items-center gap-1">
-                  <button onClick={() => moveText('left')} className="p-1.5 bg-white shadow-sm border border-stone-200 rounded-md hover:bg-stone-100 text-stone-600"><ArrowLeft className="w-4 h-4"/></button>
-                  <div className="flex flex-col gap-1">
-                    <button onClick={() => moveText('up')} className="p-1.5 bg-white shadow-sm border border-stone-200 rounded-md hover:bg-stone-100 text-stone-600"><ArrowUp className="w-4 h-4"/></button>
-                    <button onClick={() => moveText('down')} className="p-1.5 bg-white shadow-sm border border-stone-200 rounded-md hover:bg-stone-100 text-stone-600"><ArrowDown className="w-4 h-4"/></button>
+          {/* CONTROLES */}
+          <div className="flex flex-col justify-between p-6 sm:p-8 lg:col-span-5 bg-white">
+            <div>
+              <div className="flex border-b border-stone-200">
+                <button onClick={() => setActiveTab('text')} className={`flex flex-1 items-center justify-center gap-1.5 py-3 text-xs sm:text-sm font-medium border-b-2 ${activeTab === 'text' ? 'border-stone-900 text-stone-900' : 'border-transparent text-stone-600'}`}><Type className="h-4 w-4" /> Texto</button>
+                <button onClick={() => setActiveTab('colors')} className={`flex flex-1 items-center justify-center gap-1.5 py-3 text-xs sm:text-sm font-medium border-b-2 ${activeTab === 'colors' ? 'border-stone-900 text-stone-900' : 'border-transparent text-stone-600'}`}><Palette className="h-4 w-4" /> Colores</button>
+                {(currentProduct.category === 'tumbler' || currentProduct.category === 'mug') && (
+                  <button onClick={() => setActiveTab('background')} className={`flex flex-1 items-center justify-center gap-1.5 py-3 text-xs sm:text-sm font-medium border-b-2 ${activeTab === 'background' ? 'border-stone-900 text-stone-900' : 'border-transparent text-stone-600'}`}><ImageIcon className="h-4 w-4" /> Fondo</button>
+                )}
+                <button onClick={() => setActiveTab('placement')} className={`flex flex-1 items-center justify-center gap-1.5 py-3 text-xs sm:text-sm font-medium border-b-2 ${activeTab === 'placement' ? 'border-stone-900 text-stone-900' : 'border-transparent text-stone-600'}`}><Sliders className="h-4 w-4" /> Diseño</button>
+              </div>
+
+              {activeTab === 'text' && (
+                <div className="space-y-6 pt-5">
+                  <div>
+                    <label className="block text-xs font-semibold text-stone-700 uppercase mb-2">Nombre o Dedicatoria</label>
+                    <input type="text" value={customization.customText} onChange={(e) => handleTextChange(e.target.value)} placeholder="Ej. Mario Alberto" className="w-full rounded-xl border border-stone-200 bg-stone-50 px-4 py-2 text-stone-800" />
                   </div>
-                  <button onClick={() => moveText('right')} className="p-1.5 bg-white shadow-sm border border-stone-200 rounded-md hover:bg-stone-100 text-stone-600"><ArrowRightIcon className="w-4 h-4"/></button>
+                  <div>
+                    <label className="block text-xs font-semibold text-stone-700 uppercase mb-2">Tipografía ({FONT_OPTIONS.length})</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {FONT_OPTIONS.map((font) => (
+                        <button key={font.id} onClick={() => handleFontSelect(font.id)} className={`p-2 rounded-xl text-left border ${customization.fontId === font.id ? 'border-[#b90538] bg-rose-50' : 'border-stone-200'}`}>
+                          <span className="block text-lg" style={{ fontFamily: font.family }}>{font.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'colors' && (
+                <div className="space-y-6 pt-5">
+                  <div>
+                    <label className="block text-xs font-semibold text-stone-700 uppercase mb-2">Color del Producto</label>
+                    <div className="flex flex-wrap gap-2">
+                      {currentProduct.availableColors.map((color) => (
+                        <button key={color.id} onClick={() => handleProductColorSelect(color.hex)} className={`w-8 h-8 rounded-full border-2 ${customization.productColor === color.hex ? 'border-stone-900' : 'border-transparent'}`} style={{ backgroundColor: color.hex }} title={color.name}></button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-stone-700 uppercase mb-2">Color del Texto</label>
+                    <div className="flex flex-wrap gap-2">
+                      {currentProduct.textColors.map((color) => (
+                        <button key={color.id} onClick={() => handleTextColorSelect(color.hex)} className={`w-8 h-8 rounded-full border-2 ${customization.textColor === color.hex ? 'border-stone-900' : 'border-transparent'}`} style={{ backgroundColor: color.hex }} title={color.name}></button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'background' && (
+                <div className="space-y-6 pt-5">
+                  <div>
+                    <label className="block text-xs font-semibold text-stone-700 uppercase mb-2">Subir Fondo Propio</label>
+                    <div className="flex items-center gap-3">
+                      <input type="file" ref={fileInputRef} accept="image/*" onChange={handleImageUpload} className="hidden" />
+                      <button onClick={() => fileInputRef.current?.click()} className="py-2 px-4 bg-stone-100 rounded-lg text-sm flex items-center gap-2"><Upload className="w-4 h-4"/> Elegir Imagen</button>
+                      {customization.backgroundImageUrl && <button onClick={handleRemoveImage} className="text-red-500"><Trash2 className="w-5 h-5"/></button>}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-stone-700 uppercase mb-2">Patrones del Atelier</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {TUMBLER_TEXTURE_PRESETS.map((pattern) => (
+                        <button key={pattern.id} onClick={() => handlePatternSelect(pattern.id)} className={`flex items-center gap-2 p-2 border rounded-lg ${customization.selectedPatternId === pattern.id ? 'border-stone-900' : 'border-stone-200'}`}>
+                          <span className="w-6 h-6 rounded-full" style={{ background: pattern.thumbnail }}></span>
+                          <span className="text-xs">{pattern.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'placement' && (
+                <div className="space-y-6 pt-5">
+                  <label className="block text-xs font-semibold text-stone-700 uppercase mb-2">Posición del Diseño</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button onClick={() => handlePlacementChange('vertical')} className={`p-2 border rounded-lg ${customization.textPlacement === 'vertical' ? 'bg-stone-900 text-white' : ''}`}><AlignVerticalJustifyCenter className="mx-auto w-5 h-5"/></button>
+                    <button onClick={() => handlePlacementChange('horizontal')} className={`p-2 border rounded-lg ${customization.textPlacement === 'horizontal' ? 'bg-stone-900 text-white' : ''}`}><AlignHorizontalJustifyCenter className="mx-auto w-5 h-5"/></button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-8 border-t border-stone-100 pt-6">
+              <div className="flex items-center justify-between mb-4">
+                <span className="font-serif text-3xl font-semibold text-stone-900">${currentProduct.basePrice * quantity}</span>
+                <div className="flex items-center rounded-xl border border-stone-200 bg-stone-50 p-1">
+                  <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="w-8 h-8 rounded-lg bg-white shadow-sm">-</button>
+                  <span className="w-8 text-center text-sm font-semibold">{quantity}</span>
+                  <button onClick={() => setQuantity(quantity + 1)} className="w-8 h-8 rounded-lg bg-white shadow-sm">+</button>
                 </div>
               </div>
+              <button onClick={() => onProceedToCheckout(currentProduct, customization, quantity)} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#b90538] to-[#a43073] py-4 text-sm font-bold text-white shadow-lg transition-all hover:scale-[1.01]">
+                <span>Confirmar y Finalizar Compra</span>
+                <ArrowRight className="h-4 w-4" />
+              </button>
             </div>
-
-            {/* SECCIÓN 3: SUBIR FONDO (Solo para Vaso o Mandil) */}
-            {(selectedProduct.id === 'tumbler' || selectedProduct.id === 'apron') && (
-              <div className="flex flex-col gap-2 p-4 bg-blue-50/50 border border-blue-100 rounded-2xl">
-                <label className="text-sm font-bold text-stone-900 flex items-center gap-2">
-                  <span className="w-5 h-5 rounded-full bg-[#b90538] text-white text-xs flex items-center justify-center font-bold">3</span>
-                  Fondo Personalizado (Opcional)
-                </label>
-                <p className="text-[11px] text-stone-500 mb-1">Sube una imagen o patrón para reemplazar el fondo del {selectedProduct.id === 'tumbler' ? 'vaso' : 'mandil'}.</p>
-                <div className="flex items-center gap-3">
-                  <input type="file" accept="image/png, image/jpeg" ref={fileInputRef} onChange={handleImageUpload} className="hidden" />
-                  <button
-                    onClick={() => fileInputRef.current?.click()}
-                    className="flex-1 py-2.5 bg-white hover:bg-stone-50 border border-stone-200 rounded-xl text-sm font-semibold text-stone-700 flex items-center justify-center gap-2 transition-colors shadow-sm"
-                  >
-                    <ImagePlus className="w-4 h-4 text-[#b90538]" /> Elegir Imagen
-                  </button>
-                  {uploadedImage && <span className="text-xs text-emerald-600 font-bold flex items-center gap-1"><CheckCircle2 className="w-4 h-4"/> Lista</span>}
-                </div>
-              </div>
-            )}
-
-            <div className="flex flex-col gap-2.5">
-              <label className="text-sm font-bold text-stone-900 flex items-center gap-2">
-                <span className="w-5 h-5 rounded-full bg-[#b90538] text-white text-xs flex items-center justify-center font-bold">4</span>
-                Color del Texto / Bordado
-              </label>
-              <div className="grid grid-cols-6 gap-2 p-3 bg-stone-50 rounded-2xl border border-stone-200/50">
-                {COLOR_SWATCHES.map((swatch) => {
-                  const isActive = selectedColor.name === swatch.name;
-                  return (
-                    <button key={swatch.name} onClick={() => setSelectedColor(swatch)} className="group relative flex flex-col items-center gap-1 p-1" title={swatch.name}>
-                      <span className={`w-8 h-8 rounded-full shadow-md flex items-center justify-center transition-all ${isActive ? 'scale-110 ring-2 ring-[#b90538] ring-offset-1' : 'hover:scale-105'}`} style={{ background: swatch.gradient }}>
-                        {isActive && <Check className="w-3.5 h-3.5 text-white drop-shadow-sm mix-blend-difference" />}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-2.5">
-              <label className="text-sm font-bold text-stone-900 flex items-center gap-2">
-                <span className="w-5 h-5 rounded-full bg-[#b90538] text-white text-xs flex items-center justify-center font-bold">5</span>
-                Estilo tipográfico
-              </label>
-              <div className="grid grid-cols-2 gap-2">
-                {FONT_OPTIONS.map((fOption) => {
-                  const isActive = selectedFont.name === fOption.name;
-                  return (
-                    <button key={fOption.name} onClick={() => setSelectedFont(fOption)} className={`p-3 rounded-2xl text-left transition-all ${isActive ? 'bg-rose-50 text-[#b90538] border-2 border-[#b90538]' : 'bg-stone-50 border border-stone-200/50'}`}>
-                      <span className={`text-base leading-tight ${fOption.fontClass || ''}`} style={{ fontFamily: fOption.fontFamily }}>{fOption.displayName}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <button onClick={onProceedToCheckout} className="w-full py-4 px-6 rounded-full bg-gradient-to-r from-[#b90538] via-[#dc2c4f] to-[#a43073] text-white font-bold text-base shadow-lg transition-all mt-2">
-              Finalizar y Ordenar (${totalPrice.toFixed(2)})
-            </button>
           </div>
         </div>
       </div>
     </section>
   );
-}
+};

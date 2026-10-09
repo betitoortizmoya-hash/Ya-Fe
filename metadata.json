@@ -1,0 +1,6 @@
+{
+  "name": "Creaciones Ya&Fe - Personalized Boutique Gifts",
+  "description": "Luxury custom gifts and keepsake atelier featuring real-time personalized live customizer, bespoke catalog, and atelier management panel.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

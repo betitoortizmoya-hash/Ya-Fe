@@ -6,6 +6,7 @@ import {
   onSnapshot,
   doc,
   updateDoc,
+  deleteDoc,
   Firestore,
   query,
   orderBy,
@@ -14,7 +15,7 @@ import {
 import { Order, Appointment, OrderStatus } from '../types';
 import { INITIAL_ORDERS, INITIAL_APPOINTMENTS } from '../data/products';
 
-// Firebase standard configuration via environment variables
+// Configuración estándar de Firebase
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || 'AIzaSyDemoAtelierYaFeKey992019',
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || 'creaciones-yafe.firebaseapp.com',
@@ -28,7 +29,6 @@ let app: FirebaseApp | null = null;
 let db: Firestore | null = null;
 let isFirestoreAvailable = false;
 
-// Attempt Firebase initialization
 try {
   if (getApps().length === 0) {
     app = initializeApp(firebaseConfig);
@@ -36,7 +36,6 @@ try {
     app = getApps()[0];
   }
   db = getFirestore(app);
-  // Mark as configured if an explicit project id is provided in environment
   if (import.meta.env.VITE_FIREBASE_PROJECT_ID) {
     isFirestoreAvailable = true;
   }
@@ -44,7 +43,6 @@ try {
   console.info('[Firebase] Local simulated storage fallback active:', err);
 }
 
-// Reactive Local Storage Fallback Store (keeps orders synced between customizer and admin seamlessly)
 const LOCAL_STORAGE_ORDERS_KEY = 'yafe_orders_v1';
 const LOCAL_STORAGE_APPTS_KEY = 'yafe_appointments_v1';
 
@@ -84,7 +82,6 @@ function saveStoredAppointments(appts: Appointment[]): void {
   }
 }
 
-// Event listeners for inter-tab / inter-component local reactive sync
 const orderListeners = new Set<(orders: Order[]) => void>();
 const apptListeners = new Set<(appts: Appointment[]) => void>();
 
@@ -98,11 +95,7 @@ function notifyApptListeners() {
   apptListeners.forEach((listener) => listener(current));
 }
 
-/**
- * Real-time order listener (supports both Firestore onSnapshot and reactive local store)
- */
 export function subscribeToOrders(callback: (orders: Order[]) => void): Unsubscribe {
-  // If real Firestore is enabled with project connection
   if (isFirestoreAvailable && db) {
     try {
       const q = query(collection(db, 'orders'), orderBy('createdAt', 'desc'));
@@ -129,22 +122,15 @@ export function subscribeToOrders(callback: (orders: Order[]) => void): Unsubscr
       console.warn('[Firestore connection error, using local store]:', e);
     }
   }
-
-  // Reactive Local fallback
   orderListeners.add(callback);
   callback(getStoredOrders());
-
   return () => {
     orderListeners.delete(callback);
   };
 }
 
-/**
- * Saves a new customized order to the Firestore 'orders' collection
- */
 export async function addOrderToFirestore(orderData: Omit<Order, 'id'>): Promise<string> {
   let generatedId = `YF-${Math.floor(1000 + Math.random() * 9000)}`;
-
   if (isFirestoreAvailable && db) {
     try {
       const docRef = await addDoc(collection(db, 'orders'), orderData);
@@ -153,8 +139,6 @@ export async function addOrderToFirestore(orderData: Omit<Order, 'id'>): Promise
       console.warn('[Firestore addDoc failed, writing to local persistent storage]:', err);
     }
   }
-
-  // Save to persistent reactive store
   const current = getStoredOrders();
   const newOrder: Order = {
     ...orderData,
@@ -163,13 +147,9 @@ export async function addOrderToFirestore(orderData: Omit<Order, 'id'>): Promise
   const updated = [newOrder, ...current];
   saveStoredOrders(updated);
   notifyOrderListeners();
-
   return generatedId;
 }
 
-/**
- * Updates order status (Pending, In Progress, Completed) in real time
- */
 export async function updateOrderStatus(orderId: string, newStatus: OrderStatus): Promise<void> {
   if (isFirestoreAvailable && db) {
     try {
@@ -179,17 +159,27 @@ export async function updateOrderStatus(orderId: string, newStatus: OrderStatus)
       console.warn('[Firestore updateDoc failed, updating local store]:', err);
     }
   }
-
-  // Update in local persistent store
   const current = getStoredOrders();
   const updated = current.map((ord) => (ord.id === orderId ? { ...ord, status: newStatus } : ord));
   saveStoredOrders(updated);
   notifyOrderListeners();
 }
 
-/**
- * Real-time appointments listener
- */
+// NUEVA FUNCIÓN PARA ELIMINAR PEDIDOS
+export async function deleteOrder(orderId: string): Promise<void> {
+  if (isFirestoreAvailable && db) {
+    try {
+      await deleteDoc(doc(db, 'orders', orderId));
+    } catch (err) {
+      console.warn('[Firestore deleteDoc failed, updating local store]:', err);
+    }
+  }
+  const current = getStoredOrders();
+  const updated = current.filter((ord) => ord.id !== orderId);
+  saveStoredOrders(updated);
+  notifyOrderListeners();
+}
+
 export function subscribeToAppointments(callback: (appts: Appointment[]) => void): Unsubscribe {
   apptListeners.add(callback);
   callback(getStoredAppointments());
@@ -198,9 +188,6 @@ export function subscribeToAppointments(callback: (appts: Appointment[]) => void
   };
 }
 
-/**
- * Add a new appointment / consultation
- */
 export async function addAppointment(newAppt: Appointment): Promise<void> {
   const current = getStoredAppointments();
   const updated = [newAppt, ...current];
@@ -208,15 +195,10 @@ export async function addAppointment(newAppt: Appointment): Promise<void> {
   notifyApptListeners();
 }
 
-/**
- * Simulated Mailchimp Integration
- * Handles marketing newsletter subscription as required by user prompt
- */
 export function handleMailchimpSync(emailOrPhone: string, optedIn: boolean): void {
   if (!optedIn) return;
-  console.log('[Mailchimp Integration Simulation] ✨');
-  console.log(`Subscribing contact to Creaciones Ya&Fe VIP Audience List: "${emailOrPhone}"`);
-  console.log('Merge tags applied: { TAG: "LIVE_CUSTOMIZER_CHECKOUT", STATUS: "SUBSCRIBED" }');
+  console.log('[Mailchimp Integration Simulation]');
+  console.log(`Subscribing contact: "${emailOrPhone}"`);
 }
 
 export { app, db };

@@ -9,7 +9,8 @@ interface BlossomParticle {
   angle: number;
   rotationSpeed: number;
   opacity: number;
-  type: 'petal' | 'flower' | 'bud' | 'leaf';
+  type: 'petal' | 'flower' | 'leaf' | 'emoji';
+  emojiValue?: string;
   color: string;
   swayAmplitude: number;
   swayFrequency: number;
@@ -19,6 +20,17 @@ interface BlossomParticle {
 export const AmbientBackground: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [isEnabled, setIsEnabled] = useState(true);
+  // Escuchar el tema guardado o usar 'spring' por defecto
+  const [activeTheme, setActiveTheme] = useState(localStorage.getItem('ya_fe_theme') || 'spring');
+
+  // Actualizar el tema en tiempo real si el administrador lo cambia
+  useEffect(() => {
+    const handleThemeChange = () => {
+      setActiveTheme(localStorage.getItem('ya_fe_theme') || 'spring');
+    };
+    window.addEventListener('themeChanged', handleThemeChange);
+    return () => window.removeEventListener('themeChanged', handleThemeChange);
+  }, []);
 
   useEffect(() => {
     if (!isEnabled) return;
@@ -38,49 +50,70 @@ export const AmbientBackground: React.FC = () => {
     };
     window.addEventListener('resize', handleResize);
 
-    // Paleta súper femenina: Rosas brillantes, fucsias y verdes vivos para las hojas
-    const pinkColors = [
-      'rgba(255, 77, 148, 0.85)', // Rosa fuerte vibrante
-      'rgba(255, 20, 147, 0.8)',  // Fucsia profundo
-      'rgba(255, 133, 179, 0.9)', // Rosa chic chicle
-      'rgba(255, 105, 180, 0.85)',// Hot pink clásico
-    ];
-    const leafColors = [
-      'rgba(144, 238, 144, 0.85)', // Verde claro fresco
-      'rgba(110, 210, 130, 0.8)',  // Verde hoja vibrante
-      'rgba(163, 230, 150, 0.75)', // Verde menta suave
-    ];
+    // Configuraciones de temáticas
+    const THEMES = {
+      spring: {
+        types: ['petal', 'flower', 'leaf'],
+        colors: ['rgba(255, 77, 148, 0.85)', 'rgba(255, 20, 147, 0.8)', 'rgba(255, 133, 179, 0.9)'],
+        leafColors: ['rgba(144, 238, 144, 0.85)', 'rgba(110, 210, 130, 0.8)']
+      },
+      christmas: {
+        types: ['emoji'],
+        emojis: ['🎅', '🦌', '🌿', '❄️', '🎁', '✨', '🎄'],
+      },
+      halloween: {
+        types: ['emoji'],
+        emojis: ['🎃', '🦇', '🍁', '👻', '🍂', '🕷️'],
+      },
+      easter: {
+        types: ['emoji'],
+        emojis: ['🐰', '🥚', '🌸', '🌷', '🎀', '🐣'],
+      },
+      valentine: {
+        types: ['emoji'],
+        emojis: ['❤️', '💖', '✨', '🌹', '💌', '💘'],
+      }
+    };
 
+    const currentThemeConfig = THEMES[activeTheme as keyof typeof THEMES] || THEMES.spring;
     const particleCount = Math.min(35, Math.max(20, Math.floor(width / 45)));
     const particles: BlossomParticle[] = [];
 
     const createParticle = (initialY?: number): BlossomParticle => {
-      const typeRand = Math.random();
-      let type: 'petal' | 'flower' | 'bud' | 'leaf';
-      let colorArray = pinkColors;
+      const isEmojiTheme = currentThemeConfig.types.includes('emoji');
+      let type: BlossomParticle['type'] = 'petal';
+      let emojiValue = '';
+      let color = 'rgba(255,255,255,0.8)';
 
-      if (typeRand > 0.7) {
-        type = 'petal';
-      } else if (typeRand > 0.4) {
-        type = 'flower';
-      } else if (typeRand > 0.15) {
-        type = 'leaf';
-        colorArray = leafColors; // Las hojas usan la paleta verde
+      if (isEmojiTheme) {
+        type = 'emoji';
+        emojiValue = currentThemeConfig.emojis![Math.floor(Math.random() * currentThemeConfig.emojis!.length)];
       } else {
-        type = 'bud';
+        const typeRand = Math.random();
+        if (typeRand > 0.7) {
+          type = 'petal';
+          color = currentThemeConfig.colors[Math.floor(Math.random() * currentThemeConfig.colors.length)];
+        } else if (typeRand > 0.4) {
+          type = 'flower';
+          color = currentThemeConfig.colors[Math.floor(Math.random() * currentThemeConfig.colors.length)];
+        } else {
+          type = 'leaf';
+          color = currentThemeConfig.leafColors![Math.floor(Math.random() * currentThemeConfig.leafColors!.length)];
+        }
       }
 
       return {
         x: Math.random() * width,
         y: initialY !== undefined ? initialY : Math.random() * height,
-        size: type === 'flower' ? Math.random() * 12 + 14 : Math.random() * 9 + 8, // Flores más grandes
+        size: isEmojiTheme ? Math.random() * 15 + 15 : (type === 'flower' ? Math.random() * 12 + 14 : Math.random() * 9 + 8),
         speedY: Math.random() * 0.6 + 0.3,
         speedX: (Math.random() - 0.5) * 0.4 + 0.2,
         angle: Math.random() * Math.PI * 2,
         rotationSpeed: (Math.random() - 0.5) * 0.03,
-        opacity: Math.random() * 0.4 + 0.5, // Más opacidad para que brillen
+        opacity: Math.random() * 0.4 + 0.5,
         type,
-        color: colorArray[Math.floor(Math.random() * colorArray.length)],
+        emojiValue,
+        color,
         swayAmplitude: Math.random() * 2 + 1,
         swayFrequency: Math.random() * 0.02 + 0.01,
         timeOffset: Math.random() * 1000,
@@ -112,7 +145,7 @@ export const AmbientBackground: React.FC = () => {
       }
       c.beginPath();
       c.arc(0, 0, size * 0.2, 0, Math.PI * 2);
-      c.fillStyle = 'rgba(255, 220, 100, 0.9)'; // Centro amarillo brillante
+      c.fillStyle = 'rgba(255, 220, 100, 0.9)'; 
       c.fill();
     };
 
@@ -122,13 +155,19 @@ export const AmbientBackground: React.FC = () => {
       c.quadraticCurveTo(size * 0.8, -size * 0.4, size, -size);
       c.quadraticCurveTo(size * 0.3, 0, 0, 0);
       c.fill();
-      // Nervadura de la hojita
       c.beginPath();
       c.moveTo(0, 0);
       c.lineTo(size * 0.75, -size * 0.75);
       c.strokeStyle = 'rgba(255,255,255,0.4)';
       c.lineWidth = 1.2;
       c.stroke();
+    };
+
+    const drawEmoji = (c: CanvasRenderingContext2D, emoji: string, size: number) => {
+      c.font = `${size}px sans-serif`;
+      c.textAlign = 'center';
+      c.textBaseline = 'middle';
+      c.fillText(emoji, 0, 0);
     };
 
     let tick = 0;
@@ -155,15 +194,19 @@ export const AmbientBackground: React.FC = () => {
         ctx.save();
         ctx.translate(p.x, p.y);
         ctx.rotate(p.angle);
-        ctx.fillStyle = p.color;
         ctx.globalAlpha = p.opacity;
 
-        if (p.type === 'flower') {
-          drawTinyFlower(ctx, p.size);
-        } else if (p.type === 'leaf') {
-          drawLeaf(ctx, p.size);
+        if (p.type === 'emoji' && p.emojiValue) {
+          drawEmoji(ctx, p.emojiValue, p.size);
         } else {
-          drawPetal(ctx, p.size);
+          ctx.fillStyle = p.color;
+          if (p.type === 'flower') {
+            drawTinyFlower(ctx, p.size);
+          } else if (p.type === 'leaf') {
+            drawLeaf(ctx, p.size);
+          } else {
+            drawPetal(ctx, p.size);
+          }
         }
         ctx.restore();
       });
@@ -177,7 +220,7 @@ export const AmbientBackground: React.FC = () => {
       window.removeEventListener('resize', handleResize);
       cancelAnimationFrame(animationFrameId);
     };
-  }, [isEnabled]);
+  }, [isEnabled, activeTheme]); // Agregamos activeTheme como dependencia para que recargue al cambiar
 
   return (
     <>
@@ -191,7 +234,7 @@ export const AmbientBackground: React.FC = () => {
         className="fixed bottom-4 right-4 z-40 flex items-center gap-1.5 rounded-full border border-stone-200/80 bg-white/80 px-3 py-1.5 text-xs font-medium text-stone-600 shadow-sm backdrop-blur-md transition-all hover:border-[#ff4d94] hover:text-[#ff4d94]"
       >
         <span className={`inline-block h-2 w-2 rounded-full ${isEnabled ? 'animate-pulse bg-[#ff4d94]' : 'bg-stone-300'}`} />
-        <span>{isEnabled ? 'Petal Breeze On' : 'Breeze Paused'}</span>
+        <span>{isEnabled ? 'Animación On' : 'Animación Pausa'}</span>
       </button>
     </>
   );

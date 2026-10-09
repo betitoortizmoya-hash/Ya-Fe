@@ -34,7 +34,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   return (
     <header className="sticky top-0 z-40 border-b border-stone-200/70 bg-[#FAF7F5]/90 backdrop-blur-md transition-all">
       <div className="bg-[#4A3B32] py-1.5 px-4 text-center text-[11px] font-medium tracking-widest uppercase text-[#F2E5D9]">
-        <span>✨ Grabado y Caja de Regalo de Cortesía en todos los pedidos ✨</span>
+        <span>✨ Complimentary Bespoke Engraving & Gift Box on all Studio Orders ✨</span>
       </div>
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
         <button
@@ -57,27 +57,11 @@ export const Navbar: React.FC<NavbarProps> = ({
           </span>
         </div>
         <div className="hidden lg:flex items-center space-x-8 text-xs font-semibold uppercase tracking-wider text-stone-600">
-          <button onClick={() => scrollToCustomizer('tumbler-sip')} className="hover:text-stone-900 transition-colors">Termos</button>
-          <button onClick={() => scrollToCustomizer('apron-artisan')} className="hover:text-stone-900 transition-colors">Mandiles</button>
-          <button onClick={scrollToCatalog} className="hover:text-stone-900 transition-colors">Catálogo</button>
+          <button onClick={() => scrollToCustomizer('tumbler-sip')} className="hover:text-stone-900 transition-colors cursor-pointer">Coffee Tumblers</button>
+          <button onClick={() => scrollToCustomizer('apron-artisan')} className="hover:text-stone-900 transition-colors cursor-pointer">Linen Aprons</button>
+          <button onClick={scrollToCatalog} className="hover:text-stone-900 transition-colors cursor-pointer">Full Catalog</button>
         </div>
         <div className="flex items-center space-x-2.5">
           <button
             onClick={onOpenAdmin}
-            className="flex items-center gap-1.5 rounded-full border border-stone-300/80 bg-white/90 px-3 py-1.5 text-xs font-semibold tracking-wide text-stone-700 shadow-2xs hover:border-[#8C4E3A] hover:text-[#8C4E3A] transition-all cursor-pointer"
-          >
-            <ShieldCheck className="h-3.5 w-3.5 text-[#8C4E3A]" />
-            <span className="hidden sm:inline">Admin</span>
-          </button>
-          <button
-            onClick={() => scrollToCustomizer()}
-            className="hidden md:inline-flex items-center gap-1.5 rounded-full border border-stone-300 bg-white/90 px-3.5 py-1.5 text-xs font-semibold tracking-wide text-stone-800 shadow-2xs hover:border-[#dfa398] hover:text-[#b76e79] transition-all cursor-pointer"
-          >
-            <Sparkles className="h-3.5 w-3.5 text-[#B76E79]" />
-            <span>Diseñar Ahora</span>
-          </button>
-        </div>
-      </nav>
-    </header>
-  );
-};
+            className="flex items-center gap-1.5 rounded-full border border-stone-300/8

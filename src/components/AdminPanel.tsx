@@ -6,7 +6,8 @@ import {
   subscribeToOrders,
   updateOrderStatus,
   subscribeToAppointments,
-  addAppointment
+  addAppointment,
+  deleteOrder // <-- Importamos la nueva función
 } from '../services/firebase';
 import {
   Lock,
@@ -32,28 +33,21 @@ interface AdminPanelProps {
 }
 
 export default function AdminPanel({ onBackToStore }: AdminPanelProps) {
-  // Cargar credenciales guardadas o usar las por defecto
   const savedEmail = localStorage.getItem('adminEmail') || 'yndira@creacionesyafe.com';
   const savedPassword = localStorage.getItem('adminPassword') || '12345678';
 
-  // Autenticación
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [authError, setAuthError] = useState('');
 
-  // Datos de la base de datos
   const [orders, setOrders] = useState<Order[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Navegación del menú lateral
   const [activeTab, setActiveTab] = useState<'pedidos' | 'catalogo' | 'agenda' | 'perfil'>('pedidos');
-
-  // Modal de detalles de pedido
   const [inspectingOrder, setInspectingOrder] = useState<Order | null>(null);
 
-  // Perfil del administrador (Basado en la imagen "Mi Perfil")
   const [profileName, setProfileName] = useState(localStorage.getItem('adminName') || 'Yndira Morales');
   const [profileRole, setProfileRole] = useState('Directora Creativa');
   const [profileEmail, setProfileEmail] = useState(savedEmail);
@@ -61,7 +55,6 @@ export default function AdminPanel({ onBackToStore }: AdminPanelProps) {
   const [profilePassword, setProfilePassword] = useState(savedPassword);
   const [showProfileToast, setShowProfileToast] = useState(false);
 
-  // Conexión en tiempo real con Firebase
   useEffect(() => {
     const unsubOrders = subscribeToOrders((liveOrders) => setOrders(liveOrders));
     const unsubAppts = subscribeToAppointments((liveAppts) => setAppointments(liveAppts));
@@ -71,13 +64,11 @@ export default function AdminPanel({ onBackToStore }: AdminPanelProps) {
     };
   }, []);
 
-  // Lógica de inicio de sesión estricta
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     if (loginEmail.trim() === profileEmail && loginPassword === profilePassword) {
       setIsAuthenticated(true);
       setAuthError('');
-      // Limpiamos los inputs por seguridad
       setLoginEmail('');
       setLoginPassword('');
     } else {
@@ -89,9 +80,18 @@ export default function AdminPanel({ onBackToStore }: AdminPanelProps) {
     await updateOrderStatus(orderId, newStatus);
   };
 
+  // Lógica para eliminar el pedido
+  const handleDeleteOrder = async (orderId: string) => {
+    if (window.confirm('¿Estás seguro de que deseas eliminar este pedido permanentemente? Esta acción no se puede deshacer.')) {
+      await deleteOrder(orderId);
+      if (inspectingOrder?.id === orderId) {
+        setInspectingOrder(null);
+      }
+    }
+  };
+
   const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
-    // Guardar nuevas credenciales en el navegador
     localStorage.setItem('adminEmail', profileEmail);
     localStorage.setItem('adminPassword', profilePassword);
     localStorage.setItem('adminName', profileName);
@@ -106,7 +106,6 @@ export default function AdminPanel({ onBackToStore }: AdminPanelProps) {
     o.id.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // --- PANTALLA DE INICIO DE SESIÓN ---
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-stone-100 flex items-center justify-center p-6 font-sans">
@@ -173,11 +172,9 @@ export default function AdminPanel({ onBackToStore }: AdminPanelProps) {
     );
   }
 
-  // --- PANEL PRINCIPAL DEL ADMINISTRADOR ---
   return (
     <div className="min-h-screen bg-[#f4f7f6] flex font-sans text-stone-800">
       
-      {/* MENÚ LATERAL (SIDEBAR) */}
       <aside className="w-64 bg-[#1a2b4c] text-white flex flex-col fixed h-full shadow-xl z-20">
         <div className="p-6 flex flex-col items-center border-b border-white/10">
           <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mb-3">
@@ -237,10 +234,8 @@ export default function AdminPanel({ onBackToStore }: AdminPanelProps) {
         </div>
       </aside>
 
-      {/* ÁREA DE CONTENIDO PRINCIPAL */}
       <main className="flex-1 ml-64 p-8">
         
-        {/* ENCABEZADO SUPERIOR */}
         <header className="flex items-center justify-between mb-8 bg-white p-4 px-6 rounded-2xl shadow-sm border border-stone-200">
           <h1 className="text-2xl font-bold text-[#1a2b4c]">
             {activeTab === 'pedidos' && 'Gestión de Pedidos'}
@@ -254,7 +249,6 @@ export default function AdminPanel({ onBackToStore }: AdminPanelProps) {
           </button>
         </header>
 
-        {/* PESTAÑA: MI PERFIL (Basado exactamente en la primera imagen) */}
         {activeTab === 'perfil' && (
           <div className="bg-white rounded-2xl shadow-sm border border-stone-200 max-w-3xl overflow-hidden">
             <div className="p-8">
@@ -342,7 +336,6 @@ export default function AdminPanel({ onBackToStore }: AdminPanelProps) {
           </div>
         )}
 
-        {/* PESTAÑA: CATÁLOGO DE PRODUCTOS (Basado en Gestión de Servicios) */}
         {activeTab === 'catalogo' && (
           <div className="space-y-6">
             <div className="flex justify-between items-center bg-white p-4 rounded-xl border border-stone-200 shadow-sm">
@@ -376,7 +369,6 @@ export default function AdminPanel({ onBackToStore }: AdminPanelProps) {
           </div>
         )}
 
-        {/* PESTAÑA: AGENDA DE CITAS (Basado en Mi Agenda de Citas) */}
         {activeTab === 'agenda' && (
           <div className="bg-white rounded-2xl shadow-sm border border-stone-200 p-6">
             <div className="flex justify-between items-center mb-6">
@@ -398,27 +390,22 @@ export default function AdminPanel({ onBackToStore }: AdminPanelProps) {
                 <div className="py-3">Sáb</div>
               </div>
               
-              {/* Grid simulado de calendario */}
               <div className="grid grid-cols-7 text-right text-stone-500 text-sm">
-                {/* Primera Fila */}
                 {['', '', '', '', '1', '2', '3'].map((d, i) => (
                   <div key={i} className="min-h-[100px] p-2 border-b border-r border-stone-100 bg-stone-50/30">
                     {d}
                   </div>
                 ))}
-                {/* Segunda Fila */}
                 {['4', '5', '6', '7', '8', '9', '10'].map((d) => (
                   <div key={d} className="min-h-[100px] p-2 border-b border-r border-stone-100 bg-white">
                     <span className={d === '8' ? 'bg-[#1a2b4c] text-white w-6 h-6 flex items-center justify-center rounded-full ml-auto' : ''}>{d}</span>
                   </div>
                 ))}
-                {/* Tercera Fila con cita */}
                 {['11', '12', '13', '14', '15', '16', '17'].map((d) => (
                   <div key={d} className="min-h-[100px] p-2 border-b border-r border-stone-100 bg-white">
                     {d}
                   </div>
                 ))}
-                {/* Cuarta Fila con cita visual (Como en la imagen) */}
                 {['18', '19', '20', '21', '22', '23', '24'].map((d) => (
                   <div key={d} className="min-h-[100px] p-2 border-b border-r border-stone-100 bg-white text-left flex flex-col">
                     <span className="text-right mb-2">{d}</span>
@@ -429,7 +416,6 @@ export default function AdminPanel({ onBackToStore }: AdminPanelProps) {
                     )}
                   </div>
                 ))}
-                {/* Quinta Fila */}
                 {['25', '26', '27', '28', '29', '30', '31'].map((d) => (
                   <div key={d} className="min-h-[100px] p-2 border-r border-stone-100 bg-white">
                     {d}
@@ -440,7 +426,6 @@ export default function AdminPanel({ onBackToStore }: AdminPanelProps) {
           </div>
         )}
 
-        {/* PESTAÑA: PEDIDOS */}
         {activeTab === 'pedidos' && (
           <div className="bg-white rounded-2xl shadow-sm border border-stone-200 overflow-hidden">
             <div className="p-6 border-b border-stone-200 flex justify-between items-center">
@@ -498,12 +483,22 @@ export default function AdminPanel({ onBackToStore }: AdminPanelProps) {
                         </select>
                       </td>
                       <td className="p-4 text-center">
-                        <button
-                          onClick={() => setInspectingOrder(ord)}
-                          className="p-2 text-stone-400 hover:text-[#1a2b4c] bg-stone-100 hover:bg-stone-200 rounded-lg transition-colors"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </button>
+                        <div className="flex justify-center items-center gap-2">
+                          <button
+                            onClick={() => setInspectingOrder(ord)}
+                            className="p-2 text-stone-400 hover:text-[#1a2b4c] bg-stone-100 hover:bg-stone-200 rounded-lg transition-colors"
+                            title="Ver detalle completo"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteOrder(ord.id)}
+                            className="p-2 text-red-400 hover:text-red-700 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
+                            title="Eliminar pedido"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -515,7 +510,6 @@ export default function AdminPanel({ onBackToStore }: AdminPanelProps) {
 
       </main>
 
-      {/* MODAL DE DETALLES DEL PEDIDO */}
       <AnimatePresence>
         {inspectingOrder && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-stone-900/60 backdrop-blur-sm">

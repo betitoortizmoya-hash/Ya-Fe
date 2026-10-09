@@ -3,24 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Order, OrderStatus } from '../types';
 import { PRODUCTS } from '../data/products';
 import { getStoredOrders, updateOrderStatus } from '../services/orders';
-import {
-  Lock,
-  Search,
-  Eye,
-  CheckCircle2,
-  Calendar,
-  ShoppingBag,
-  Box,
-  User,
-  LogOut,
-  Plus,
-  X,
-  Store,
-  Edit2,
-  Trash2,
-  Phone,
-  MessageCircle
-} from 'lucide-react';
+import { Lock, Search, Eye, CheckCircle2, Calendar, ShoppingBag, Box, User, LogOut, Plus, X, Store, Edit2, Trash2, Phone, MessageCircle } from 'lucide-react';
 
 interface AdminPanelProps {
   isOpen?: boolean;
@@ -93,7 +76,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen = true, onClose, 
     localStorage.setItem('adminPassword', profilePassword);
     localStorage.setItem('adminName', profileName);
     localStorage.setItem('adminPhone', profileWhatsApp);
-    
+
     setShowProfileToast(true);
     setTimeout(() => setShowProfileToast(false), 3000);
   };
@@ -138,7 +121,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen = true, onClose, 
               <input
                 type="text"
                 required
-                autoComplete="new-password" 
+                autoComplete="new-password"
                 value={loginUser}
                 onChange={(e) => setLoginUser(e.target.value)}
                 className="w-full border border-stone-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#1a2b4c]/50 focus:border-[#1a2b4c]"
@@ -163,7 +146,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen = true, onClose, 
             >
               Iniciar Sesión
             </button>
-            
+
             <button
               type="button"
               onClick={onBackToStore}
@@ -180,7 +163,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen = true, onClose, 
 
   return (
     <div className="fixed inset-0 z-50 bg-[#f4f7f6] flex font-sans text-stone-800 overflow-hidden">
-      
       <aside className="w-64 bg-[#1a2b4c] text-white flex flex-col fixed h-full shadow-xl z-20">
         <div className="p-6 flex flex-col items-center border-b border-white/10">
           <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mb-3">
@@ -371,4 +353,73 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen = true, onClose, 
                           <button onClick={() => setInspectingOrder(ord)} className="p-2 text-stone-400 hover:text-[#1a2b4c] bg-stone-100 hover:bg-stone-200 rounded-lg transition-colors" title="Ver detalle">
                             <Eye className="w-4 h-4" />
                           </button>
-                          <button onClick={() => handleDeleteOrder(ord.id)} className="p-2 text-red-400 hover:text-red-700 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
+                          <button onClick={() => handleDeleteOrder(ord.id)} className="p-2 text-red-400 hover:text-red-700 bg-red-50 hover:bg-red-100 rounded-lg transition-colors" title="Eliminar pedido">
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      </main>
+
+      <AnimatePresence>
+        {inspectingOrder && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-stone-900/60 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-2xl max-w-lg w-full p-8 shadow-2xl relative"
+            >
+              <button onClick={() => setInspectingOrder(null)} className="absolute top-4 right-4 p-2 text-stone-400 hover:text-stone-700 bg-stone-100 rounded-full">
+                <X className="w-5 h-5" />
+              </button>
+              
+              <h3 className="text-xl font-bold text-[#1a2b4c] mb-6 border-b border-stone-100 pb-3">Detalle del Pedido #{inspectingOrder.id}</h3>
+              
+              <div className="space-y-4 text-sm text-stone-700">
+                <div>
+                  <p className="text-xs font-bold text-stone-400 uppercase tracking-wider mb-1">Cliente</p>
+                  <p className="font-bold text-lg">{inspectingOrder.customerName}</p>
+                  <p>{inspectingOrder.customerWhatsApp}</p>
+                  {inspectingOrder.notes && <p className="text-stone-500 mt-1 italic">"{inspectingOrder.notes}"</p>}
+                </div>
+                
+                <div className="max-h-48 overflow-y-auto space-y-2 pr-2">
+                  {inspectingOrder.items.map((item, idx) => (
+                    <div key={idx} className="p-4 bg-stone-50 rounded-xl border border-stone-200">
+                      <p className="text-xs font-bold text-stone-400 uppercase tracking-wider mb-1">Pieza {idx + 1}: {item.product.name} (x{item.quantity})</p>
+                      {item.customization.customText && (
+                        <p className="text-[#b90538] font-bold text-base mt-1">"{item.customization.customText}"</p>
+                      )}
+                      {item.customization.secondaryText && (
+                        <p className="text-stone-600 font-medium text-xs mt-1">{item.customization.secondaryText}</p>
+                      )}
+                      <p className="text-xs mt-1 text-stone-500">Color Base: <span className="font-medium text-stone-700">{item.customization.productColor}</span></p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex justify-between items-center p-4 bg-[#1a2b4c] text-white rounded-xl mt-4">
+                  <div>
+                    <p className="text-xs text-white/70 font-bold uppercase">Total Pagado</p>
+                    <p className="font-bold text-xl">${inspectingOrder.total.toFixed(2)}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs text-white/70 font-bold uppercase">Fecha de Orden</p>
+                    <p className="font-semibold">{new Date(inspectingOrder.createdAt).toLocaleDateString()}</p>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}

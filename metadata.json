@@ -1,0 +1,6 @@
+{
+  "name": "YA&FE Atelier - Custom Tumblers, Aprons & Bespoke Gifts",
+  "description": "Bespoke personalized studio for custom stainless steel coffee tumblers, linen chef aprons, and curated artisan keepsakes with live interactive design preview.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

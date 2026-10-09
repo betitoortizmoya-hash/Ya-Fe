@@ -20,10 +20,8 @@ interface BlossomParticle {
 export const AmbientBackground: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [isEnabled, setIsEnabled] = useState(true);
-  // Escuchar el tema guardado o usar 'spring' por defecto
   const [activeTheme, setActiveTheme] = useState(localStorage.getItem('ya_fe_theme') || 'spring');
 
-  // Actualizar el tema en tiempo real si el administrador lo cambia
   useEffect(() => {
     const handleThemeChange = () => {
       setActiveTheme(localStorage.getItem('ya_fe_theme') || 'spring');
@@ -50,7 +48,6 @@ export const AmbientBackground: React.FC = () => {
     };
     window.addEventListener('resize', handleResize);
 
-    // Configuraciones de temáticas
     const THEMES = {
       spring: {
         types: ['petal', 'flower', 'leaf'],
@@ -105,7 +102,8 @@ export const AmbientBackground: React.FC = () => {
       return {
         x: Math.random() * width,
         y: initialY !== undefined ? initialY : Math.random() * height,
-        size: isEmojiTheme ? Math.random() * 15 + 15 : (type === 'flower' ? Math.random() * 12 + 14 : Math.random() * 9 + 8),
+        // Emojis mucho más grandes (25 a 45px), flores y pétalos mantienen su tamaño delicado
+        size: isEmojiTheme ? Math.random() * 20 + 25 : (type === 'flower' ? Math.random() * 12 + 14 : Math.random() * 9 + 8),
         speedY: Math.random() * 0.6 + 0.3,
         speedX: (Math.random() - 0.5) * 0.4 + 0.2,
         angle: Math.random() * Math.PI * 2,
@@ -176,7 +174,7 @@ export const AmbientBackground: React.FC = () => {
       ctx.clearRect(0, 0, width, height);
 
       particles.forEach((p, idx) => {
-        p.angle += p.rotationSpeed;
+        // Movimiento de empuje horizontal del viento (sway)
         const sway = Math.sin((tick + p.timeOffset) * p.swayFrequency) * p.swayAmplitude;
         p.x += p.speedX + sway;
         p.y += p.speedY;
@@ -193,7 +191,19 @@ export const AmbientBackground: React.FC = () => {
 
         ctx.save();
         ctx.translate(p.x, p.y);
-        ctx.rotate(p.angle);
+        
+        // Rotación: Las flores dan vueltas completas, pero los emojis solo se mecen de lado a lado
+        let currentAngle = p.angle;
+        if (p.type === 'emoji') {
+          // Efecto de balanceo natural (mecedora) para los elementos temáticos
+          currentAngle = Math.sin((tick + p.timeOffset) * 0.015) * 0.4;
+        } else {
+          // Rotación normal para los pétalos
+          p.angle += p.rotationSpeed;
+          currentAngle = p.angle;
+        }
+        
+        ctx.rotate(currentAngle);
         ctx.globalAlpha = p.opacity;
 
         if (p.type === 'emoji' && p.emojiValue) {
@@ -220,7 +230,7 @@ export const AmbientBackground: React.FC = () => {
       window.removeEventListener('resize', handleResize);
       cancelAnimationFrame(animationFrameId);
     };
-  }, [isEnabled, activeTheme]); // Agregamos activeTheme como dependencia para que recargue al cambiar
+  }, [isEnabled, activeTheme]);
 
   return (
     <>

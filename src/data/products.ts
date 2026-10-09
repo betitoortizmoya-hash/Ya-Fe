@@ -83,200 +83,28 @@ export const PRODUCTS: Product[] = [
   }
 ];
 
+// PALETA EXTENDIDA CON COLORES PRINCIPALES
 export const COLOR_SWATCHES: ColorSwatch[] = [
-  {
-    name: 'Rose Gold Atelier',
-    hex: '#b90538',
-    shortLabel: 'Rose',
-    gradient: 'radial-gradient(circle, #ffb2b7 0%, #b90538 100%)'
-  },
-  {
-    name: 'Champagne Gold Ciselé',
-    hex: '#d4af37',
-    shortLabel: 'Gold',
-    gradient: 'radial-gradient(circle, #fde68a 0%, #b45309 100%)'
-  },
-  {
-    name: 'Pivoine Blush Pink',
-    hex: '#a43073',
-    shortLabel: 'Blush',
-    gradient: 'radial-gradient(circle, #fbcfe8 0%, #a43073 100%)'
-  },
-  {
-    name: 'Powder Silk Ivory',
-    hex: '#4a3b32',
-    shortLabel: 'Ivory',
-    gradient: 'radial-gradient(circle, #ffffff 0%, #e0d8d5 100%)'
-  },
-  {
-    name: 'Velvet Midnight Black',
-    hex: '#1e1b19',
-    shortLabel: 'Noir',
-    gradient: 'radial-gradient(circle, #44403c 0%, #1e1b19 100%)'
-  },
-  {
-    name: 'Botanical Emerald Sage',
-    hex: '#2d5a43',
-    shortLabel: 'Sage',
-    gradient: 'radial-gradient(circle, #a7f3d0 0%, #064e3b 100%)'
-  }
+  { name: 'Velvet Midnight Black', hex: '#1e1b19', shortLabel: 'Noir', gradient: 'radial-gradient(circle, #44403c 0%, #1e1b19 100%)' },
+  { name: 'Pure Snow White', hex: '#ffffff', shortLabel: 'Blanc', gradient: 'radial-gradient(circle, #f8f9fa 0%, #e9ecef 100%)' },
+  { name: 'Rose Gold Atelier', hex: '#b90538', shortLabel: 'Rose', gradient: 'radial-gradient(circle, #ffb2b7 0%, #b90538 100%)' },
+  { name: 'Champagne Gold Ciselé', hex: '#d4af37', shortLabel: 'Gold', gradient: 'radial-gradient(circle, #fde68a 0%, #b45309 100%)' },
+  { name: 'Pivoine Blush Pink', hex: '#a43073', shortLabel: 'Blush', gradient: 'radial-gradient(circle, #fbcfe8 0%, #a43073 100%)' },
+  { name: 'Botanical Emerald Sage', hex: '#2d5a43', shortLabel: 'Sage', gradient: 'radial-gradient(circle, #a7f3d0 0%, #064e3b 100%)' },
+  { name: 'Royal Sapphire Blue', hex: '#0f4c81', shortLabel: 'Azure', gradient: 'radial-gradient(circle, #93c5fd 0%, #1e3a8a 100%)' },
+  { name: 'Vibrant Crimson Red', hex: '#dc2626', shortLabel: 'Rouge', gradient: 'radial-gradient(circle, #fca5a5 0%, #991b1b 100%)' },
+  { name: 'Amethyst Purple', hex: '#7c3aed', shortLabel: 'Plum', gradient: 'radial-gradient(circle, #c4b5fd 0%, #4c1d95 100%)' },
+  { name: 'Sunflower Yellow', hex: '#fbbf24', shortLabel: 'Soleil', gradient: 'radial-gradient(circle, #fde68a 0%, #b45309 100%)' },
+  { name: 'Tangerine Orange', hex: '#ea580c', shortLabel: 'Coral', gradient: 'radial-gradient(circle, #fdba74 0%, #c2410c 100%)' },
+  { name: 'Silver Slate', hex: '#64748b', shortLabel: 'Silver', gradient: 'radial-gradient(circle, #cbd5e1 0%, #475569 100%)' }
 ];
 
 export const FONT_OPTIONS: FontOption[] = [
-  {
-    name: 'Serif Royal',
-    fontFamily: "'Playfair Display', Georgia, serif",
-    displayName: 'Aa Romantique',
-    subLabel: 'Serif Royal Couture',
-    isItalic: false,
-    fontClass: 'font-serif'
-  },
-  {
-    name: 'Modern Chic',
-    fontFamily: "'Plus Jakarta Sans', sans-serif",
-    displayName: 'Aa Moderne',
-    subLabel: 'Modern Sans Épuré',
-    isItalic: false,
-    fontClass: 'font-sans font-bold'
-  },
-  {
-    name: 'Romance Calligraphy',
-    fontFamily: "'Playfair Display', Georgia, serif",
-    displayName: 'Aa Calligraphie',
-    subLabel: 'Romance Cursive',
-    isItalic: true,
-    fontClass: 'font-serif italic'
-  },
-  {
-    name: 'Minimal Intemporal',
-    fontFamily: "monospace",
-    displayName: 'AA ATELIER',
-    subLabel: 'Minimal Intemporel',
-    isItalic: false,
-    fontClass: 'font-mono tracking-widest uppercase font-semibold'
-  }
+  { name: 'Serif Royal', fontFamily: "'Playfair Display', Georgia, serif", displayName: 'Aa Romantique', subLabel: 'Serif Royal Couture', isItalic: false, fontClass: 'font-serif' },
+  { name: 'Modern Chic', fontFamily: "'Plus Jakarta Sans', sans-serif", displayName: 'Aa Moderne', subLabel: 'Modern Sans', isItalic: false, fontClass: 'font-sans font-bold' },
+  { name: 'Romance Calligraphy', fontFamily: "'Playfair Display', Georgia, serif", displayName: 'Aa Calligraphie', subLabel: 'Romance Cursive', isItalic: true, fontClass: 'font-serif italic' },
+  { name: 'Minimal Intemporal', fontFamily: "monospace", displayName: 'AA ATELIER', subLabel: 'Minimal Intemporel', isItalic: false, fontClass: 'font-mono tracking-widest uppercase font-semibold' }
 ];
 
-export const INITIAL_ORDERS = [
-  {
-    id: 'YF-8092',
-    product: 'Silk Bridal Keepsake Box',
-    price: 185.0,
-    customization: {
-      text: 'Forever C&J',
-      color: '#b90538',
-      colorName: 'Rose Gold Atelier',
-      font: "'Playfair Display', serif",
-      fontName: 'Serif Royal'
-    },
-    customer: {
-      name: 'Camila Valenzuela',
-      whatsapp: '+1 (809) 492-1084',
-      address: 'Piantini, Santo Domingo',
-      deliveryDate: '2026-10-28',
-      giftNote: 'To love and cherish forever'
-    },
-    mailchimpSubscribed: true,
-    status: 'In Progress' as const,
-    createdAt: new Date(Date.now() - 3600000 * 5).toISOString()
-  },
-  {
-    id: 'YF-8093',
-    product: 'Engraved Acrylic Memory Frame',
-    price: 94.5,
-    customization: {
-      text: 'First Anniversary',
-      color: '#d4af37',
-      colorName: 'Champagne Gold',
-      font: "'Playfair Display', serif",
-      fontName: 'Romance Calligraphy'
-    },
-    customer: {
-      name: 'Mateo Del Rosario',
-      whatsapp: '+1 (829) 710-8832',
-      address: 'Bella Vista, Santo Domingo',
-      deliveryDate: '2026-11-02'
-    },
-    mailchimpSubscribed: false,
-    status: 'Pending' as const,
-    createdAt: new Date(Date.now() - 3600000 * 12).toISOString()
-  },
-  {
-    id: 'YF-8094',
-    product: 'Velvet Keepsake Ring Pillow',
-    price: 120.0,
-    customization: {
-      text: 'L & S • 2024',
-      color: '#a43073',
-      colorName: 'Pivoine Blush Pink',
-      font: "'Playfair Display', serif",
-      fontName: 'Serif Royal'
-    },
-    customer: {
-      name: 'Lucia Fernandez',
-      whatsapp: '+1 (809) 330-9921',
-      address: 'Atelier Concierge Station',
-      deliveryDate: '2026-10-22'
-    },
-    mailchimpSubscribed: true,
-    status: 'Completed' as const,
-    createdAt: new Date(Date.now() - 3600000 * 28).toISOString()
-  },
-  {
-    id: 'YF-8095',
-    product: 'Luxury Personalized Wine Chest',
-    price: 240.0,
-    customization: {
-      text: 'Familia Santana',
-      color: '#d4af37',
-      colorName: 'Champagne Gold',
-      font: "'Playfair Display', serif",
-      fontName: 'Serif Royal'
-    },
-    customer: {
-      name: 'Gabriel Santana',
-      whatsapp: '+1 (829) 554-1002',
-      address: 'Naco, Santo Domingo',
-      deliveryDate: '2026-11-05'
-    },
-    mailchimpSubscribed: true,
-    status: 'In Progress' as const,
-    createdAt: new Date(Date.now() - 3600000 * 40).toISOString()
-  }
-];
-
-export const INITIAL_APPOINTMENTS = [
-  {
-    id: 'apt-1',
-    title: 'Wedding Favors Briefing',
-    clientName: 'Isabella Sterling (65 Guests)',
-    type: 'In-Store' as const,
-    date: '2026-10-24',
-    displayDay: '24',
-    displayMonth: 'Oct',
-    timeSlot: '03:30 PM - 04:30 PM',
-    notes: 'Sample box review and ribbon tone selection'
-  },
-  {
-    id: 'apt-2',
-    title: 'Holiday Gift Box Preview',
-    clientName: 'Corporate Keepsakes (Banco BHD)',
-    type: 'Virtual Call' as const,
-    date: '2026-10-26',
-    displayDay: '26',
-    displayMonth: 'Oct',
-    timeSlot: '10:00 AM - 10:45 AM',
-    notes: 'Custom batch of 120 tumblers with laser logos'
-  },
-  {
-    id: 'apt-3',
-    title: 'Bridal Keepsake Collection Pickup',
-    clientName: 'Lucia Fernandez',
-    type: 'Pickup' as const,
-    date: '2026-10-29',
-    displayDay: '29',
-    displayMonth: 'Oct',
-    timeSlot: '02:00 PM - 02:30 PM',
-    notes: 'Ready for handoff with wax seal ribbon'
-  }
-];
+export const INITIAL_ORDERS = [];
+export const INITIAL_APPOINTMENTS = [];

@@ -5,7 +5,7 @@ import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
   return {
-    base: '/Ya-Fe/', // <-- ¡ESTA ES LA LÍNEA CLAVE!
+    base: '/Ya-Fe/',
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {

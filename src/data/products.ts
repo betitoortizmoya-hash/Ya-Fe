@@ -24,6 +24,14 @@ export const APRON_COLOR_OPTIONS: ColorOption[] = [
   { id: 'caramel-latte', name: 'Caramel Macchiato', hex: '#9C6E4A' }
 ];
 
+export const SHIRT_COLOR_OPTIONS: ColorOption[] = [
+  { id: 'classic-white', name: 'Blanco Nieve', hex: '#F9FAFB' },
+  { id: 'blush-pink', name: 'Rosa Femenino', hex: '#FDF2F8' },
+  { id: 'midnight-navy', name: 'Azul Noche', hex: '#1E293B' },
+  { id: 'soft-lavender', name: 'Lavanda Suave', hex: '#F3E8FF' },
+  { id: 'champagne-silk', name: 'Seda Champagne', hex: '#FEF3C7' },
+];
+
 export const TEXT_COLOR_OPTIONS: ColorOption[] = [
   { id: 'engraved-bronze', name: 'Laser Etched Bronze', hex: '#4A3428' },
   { id: 'metallic-gold', name: 'Gilded 24k Gold Foil', hex: '#D4AF37' },
@@ -88,7 +96,7 @@ export const PRODUCTS: Product[] = [
     category: 'tumbler',
     basePrice: 38,
     originalPrice: 48,
-    badge: 'Bestseller ⭐',
+    badge: 'Bestseller',
     tagline: 'Colloquial barista-grade double-wall vacuum insulated coffee tumbler with straw & leakproof splash lid',
     description: 'Keep your matcha iced for 24 hours or your oat latte piping hot for 8 hours. Crafted from culinary-grade 18/8 stainless steel, precision laser-etched with your signature font, custom name, and optional custom pattern or image wrap.',
     specs: [
@@ -116,13 +124,73 @@ export const PRODUCTS: Product[] = [
     textColors: TEXT_COLOR_OPTIONS
   },
   {
+    id: 'shirt-polo',
+    name: 'Polo Atelier Femenina',
+    colloquialTitle: 'Camiseta Tipo Polo Premium',
+    category: 'shirt',
+    basePrice: 32,
+    badge: 'Nuevo',
+    tagline: 'Algodón pima ultra suave con corte femenino y cuello estructurado.',
+    description: 'Perfecta para un look casual chic. Sube tu patrón de fondo favorito o mantenla lisa con un bordado directo en el pecho.',
+    specs: [
+      '100% Algodón Pima de alta transpirabilidad',
+      'Corte ajustado femenino (Slim fit)',
+      'Cuello acanalado que no pierde su forma',
+      'Bordado o sublimado premium'
+    ],
+    defaultCustomization: {
+      productId: 'shirt-polo',
+      productType: 'shirt',
+      customText: 'YA&FE',
+      secondaryText: 'Atelier',
+      fontId: 'montserrat',
+      productColor: '#FDF2F8',
+      textColor: '#1E293B',
+      textPlacement: 'chest',
+      fontSize: 3,
+      selectedPatternId: 'none',
+    },
+    availableColors: SHIRT_COLOR_OPTIONS,
+    textColors: TEXT_COLOR_OPTIONS
+  },
+  {
+    id: 'shirt-formal',
+    name: 'Camisa Formal de Vestir',
+    colloquialTitle: 'Camisa Oxford de Vestir Customizada',
+    category: 'shirt',
+    basePrice: 45,
+    badge: 'Elegance',
+    tagline: 'Corte sastre en tela Oxford resistente a arrugas con botones nacarados.',
+    description: 'Eleva tu estilo profesional. Añade un monograma discreto o un patrón floral completo para un diseño único de alta costura.',
+    specs: [
+      'Mezcla Oxford Premium (Anti-arrugas)',
+      'Botones nacarados y cuello fusionado',
+      'Costura francesa de alta durabilidad',
+      'Acepta fondos completos y bordados'
+    ],
+    defaultCustomization: {
+      productId: 'shirt-formal',
+      productType: 'shirt',
+      customText: 'Yndira',
+      secondaryText: 'Est. 2024',
+      fontId: 'alex-brush',
+      productColor: '#F9FAFB',
+      textColor: '#B76E79',
+      textPlacement: 'pocket',
+      fontSize: 3,
+      selectedPatternId: 'none',
+    },
+    availableColors: SHIRT_COLOR_OPTIONS,
+    textColors: TEXT_COLOR_OPTIONS
+  },
+  {
     id: 'apron-artisan',
     name: 'The French Bistro Linen Apron',
     colloquialTitle: 'The Artisan Chef & Barista Stonewashed Linen Apron',
     category: 'apron',
     basePrice: 44,
     originalPrice: 56,
-    badge: 'Artisan Choice ✨',
+    badge: 'Artisan Choice',
     tagline: 'Tailored heavyweight 100% stone-washed pure linen apron with solid brass accents & deep kangaroo pockets',
     description: 'Designed for passionate bakers, home chefs, baristas, and florists. Cut from ultra-soft pre-washed French flax linen that gets softer with every wash. Monogrammed or embroidered with your name in exquisite heirloom calligraphy.',
     specs: [
@@ -155,9 +223,9 @@ export const PRODUCTS: Product[] = [
     category: 'tote',
     basePrice: 28,
     originalPrice: 35,
-    badge: 'Eco Luxe 🌱',
+    badge: 'Eco Luxe',
     tagline: '16oz organic heavy cotton canvas with reinforced base and magnetic brass closure',
-    description: 'Your chic everyday companion for farmer’s markets, library trips, and weekend getaways. Embellished with custom typography in rich metallic foil or clean minimalist black ink.',
+    description: 'Your chic everyday companion for farmer\'s markets, library trips, and weekend getaways. Embellished with custom typography in rich metallic foil or clean minimalist black ink.',
     specs: [
       '100% Certified Organic 16oz cotton canvas',
       'Interior zippered slip pocket & key leash',
@@ -168,7 +236,7 @@ export const PRODUCTS: Product[] = [
       productId: 'tote-canvas',
       productType: 'tote',
       customText: 'YA&FE Atelier',
-      secondaryText: 'Paris • New York • Est. 2024',
+      secondaryText: 'Paris - New York - Est. 2024',
       fontId: 'playfair',
       productColor: '#EDE6DA',
       textColor: '#1C1917',
@@ -189,7 +257,7 @@ export const PRODUCTS: Product[] = [
     colloquialTitle: 'Handcrafted Speckled Stoneware Coffee Mug (14oz)',
     category: 'mug',
     basePrice: 24,
-    badge: 'Gift Favorite ☕',
+    badge: 'Gift Favorite',
     tagline: 'Wheel-thrown aesthetic stoneware with comfortable ergonomic handle & reactive glaze',
     description: 'Slow mornings deserve an artisanal vessel. Custom inscribed with initials, dates, or warm sentiments in lustrous real gold luster or rustic matte ink.',
     specs: [

@@ -28,6 +28,9 @@ export interface CustomizationConfig {
   font: string;
   fontName: string;
   isItalic?: boolean;
+  positionY?: number; // Nueva propiedad para posición vertical
+  positionX?: number; // Nueva propiedad para posición horizontal
+  uploadedImage?: string | null; // Nueva propiedad para imágenes adjuntas
 }
 
 export interface CustomerInfo {
@@ -50,6 +53,7 @@ export interface Order {
     colorName?: string;
     font: string;
     fontName?: string;
+    uploadedImage?: string | null; // Guardar la imagen en la orden
   };
   customer: {
     name: string;

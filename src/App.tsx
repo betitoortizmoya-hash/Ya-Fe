@@ -7,11 +7,8 @@ import { CatalogSection } from './components/CatalogSection';
 import { DistinctionBanner } from './components/DistinctionBanner';
 import { Footer } from './components/Footer';
 import { CheckoutModal } from './components/CheckoutModal';
-import * as AdminModule from './components/AdminPanel';
+import { AdminPanel } from './components/AdminPanel';
 import { CartItem, Product, ProductCustomization } from './types';
-
-// Esto soluciona a la fuerza el error de MISSING_EXPORT que aparecía en rojo
-const AdminPanel = (AdminModule as any).AdminPanel || (AdminModule as any).default;
 
 export default function App() {
   const [selectedProductId, setSelectedProductId] = useState<string>('tumbler-sip');

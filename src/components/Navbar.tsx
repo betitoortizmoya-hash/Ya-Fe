@@ -27,9 +27,6 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   return (
     <header className="sticky top-0 z-40 border-b border-stone-200/70 bg-[#FAF7F5]/90 backdrop-blur-md transition-all">
-      <div className="bg-[#4A3B32] py-1.5 px-4 text-center text-[11px] font-medium tracking-widest uppercase text-[#F2E5D9]">
-        <span>✨ Grabado y Caja de Regalo de Cortesía en todos los pedidos ✨</span>
-      </div>
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
         <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="p-1.5 text-stone-700 lg:hidden">
           {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}

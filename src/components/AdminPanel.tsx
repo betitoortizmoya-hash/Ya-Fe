@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Order, OrderStatus } from '../types';
 import { PRODUCTS } from '../data/products';
 import { getStoredOrders, updateOrderStatus } from '../services/orders';
-import { Lock, Search, Eye, CheckCircle2, Calendar, ShoppingBag, Box, User, LogOut, Plus, X, Store, Edit2, Trash2, Phone, MessageCircle, Palette, Sparkles } from 'lucide-react';
+import { Lock, Search, Eye, CheckCircle2, Calendar, ShoppingBag, Box, User, LogOut, Plus, X, Store, Trash2, Phone, Sparkles, Palette } from 'lucide-react';
 
 interface AdminPanelProps {
   isOpen?: boolean;
@@ -37,6 +37,16 @@ export default function AdminPanel({ isOpen = true, onClose, onBackToStore }: Ad
   
   const [currentTheme, setCurrentTheme] = useState(localStorage.getItem('ya_fe_theme') || 'spring');
 
+  // Lógica del Calendario Dinámico para la Agenda
+  const currentDate = new Date();
+  const currentMonth = currentDate.getMonth();
+  const currentYear = currentDate.getFullYear();
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+  const firstDayIndex = new Date(currentYear, currentMonth, 1).getDay();
+  const monthName = currentDate.toLocaleString('es-ES', { month: 'long', year: 'numeric' });
+  const blanks = Array.from({ length: firstDayIndex });
+  const days = Array.from({ length: daysInMonth }).map((_, i) => i + 1);
+
   useEffect(() => {
     if (isOpen) {
       setOrders(getStoredOrders());
@@ -58,6 +68,17 @@ export default function AdminPanel({ isOpen = true, onClose, onBackToStore }: Ad
   const handleStatusChange = (orderId: string, newStatus: OrderStatus) => {
     const updated = updateOrderStatus(orderId, newStatus);
     setOrders(updated);
+  };
+
+  // Función para agendar la fecha de entrega
+  const handleDeliveryDateChange = (orderId: string, newDate: string) => {
+    const current = getStoredOrders();
+    const updated = current.map(o => o.id === orderId ? { ...o, deliveryDate: newDate } : o);
+    localStorage.setItem('ya_fe_atelier_orders_v1', JSON.stringify(updated));
+    setOrders(updated);
+    if (inspectingOrder?.id === orderId) {
+      setInspectingOrder({ ...inspectingOrder, deliveryDate: newDate });
+    }
   };
 
   const handleDeleteOrder = (orderId: string) => {
@@ -102,67 +123,24 @@ export default function AdminPanel({ isOpen = true, onClose, onBackToStore }: Ad
   if (!isAuthenticated) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-stone-900/60 backdrop-blur-sm font-sans">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white max-w-md w-full rounded-2xl shadow-xl p-8 border border-stone-200 relative"
-        >
-          <button onClick={closePanel} className="absolute top-4 right-4 text-stone-400 hover:text-stone-700">
-            <X className="w-5 h-5" />
-          </button>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white max-w-md w-full rounded-2xl shadow-xl p-8 border border-stone-200 relative">
+          <button onClick={closePanel} className="absolute top-4 right-4 text-stone-400 hover:text-stone-700 cursor-pointer"><X className="w-5 h-5" /></button>
           <div className="flex flex-col items-center mb-8">
-            <div className="w-16 h-16 bg-[#1a2b4c] text-white rounded-full flex items-center justify-center mb-4">
-              <Lock className="w-8 h-8" />
-            </div>
+            <div className="w-16 h-16 bg-[#1a2b4c] text-white rounded-full flex items-center justify-center mb-4"><Lock className="w-8 h-8" /></div>
             <h2 className="text-2xl font-bold text-[#1a2b4c]">Acceso Administrativo</h2>
           </div>
-
-          {authError && (
-            <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm text-center mb-4 border border-red-200">
-              {authError}
-            </div>
-          )}
-
+          {authError && <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm text-center mb-4 border border-red-200">{authError}</div>}
           <form onSubmit={handleLogin} className="space-y-5" autoComplete="off">
             <div>
               <label className="block text-sm font-semibold text-stone-700 mb-1">Usuario</label>
-              <input
-                type="text"
-                required
-                autoComplete="new-password"
-                value={loginUser}
-                onChange={(e) => setLoginUser(e.target.value)}
-                className="w-full border border-stone-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#1a2b4c]/50 focus:border-[#1a2b4c]"
-                placeholder="Ingresar usuario"
-              />
+              <input type="text" required autoComplete="new-password" value={loginUser} onChange={(e) => setLoginUser(e.target.value)} className="w-full border border-stone-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#1a2b4c]/50 focus:border-[#1a2b4c]" placeholder="Ingresar usuario" />
             </div>
             <div>
               <label className="block text-sm font-semibold text-stone-700 mb-1">Contraseña</label>
-              <input
-                type="password"
-                required
-                autoComplete="new-password"
-                value={loginPassword}
-                onChange={(e) => setLoginPassword(e.target.value)}
-                className="w-full border border-stone-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#1a2b4c]/50 focus:border-[#1a2b4c]"
-                placeholder="••••••••"
-              />
+              <input type="password" required autoComplete="new-password" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} className="w-full border border-stone-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#1a2b4c]/50 focus:border-[#1a2b4c]" placeholder="••••••••" />
             </div>
-            <button
-              type="submit"
-              className="w-full bg-[#1a2b4c] text-white font-bold py-3 rounded-lg hover:bg-[#111c33] transition-colors mt-2"
-            >
-              Iniciar Sesión
-            </button>
-
-            <button
-              type="button"
-              onClick={onBackToStore}
-              className="w-full flex items-center justify-center gap-2 text-stone-500 hover:text-stone-800 text-sm mt-4 transition-colors"
-            >
-              <Store className="w-4 h-4" />
-              Volver a la Tienda
-            </button>
+            <button type="submit" className="w-full bg-[#1a2b4c] text-white font-bold py-3 rounded-lg hover:bg-[#111c33] transition-colors mt-2 cursor-pointer">Iniciar Sesión</button>
+            <button type="button" onClick={onBackToStore} className="w-full flex items-center justify-center gap-2 text-stone-500 hover:text-stone-800 text-sm mt-4 transition-colors cursor-pointer"><Store className="w-4 h-4" /> Volver a la Tienda</button>
           </form>
         </motion.div>
       </div>
@@ -181,30 +159,16 @@ export default function AdminPanel({ isOpen = true, onClose, onBackToStore }: Ad
         </div>
         
         <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
-          <button onClick={() => setActiveTab('pedidos')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${activeTab === 'pedidos' ? 'bg-white/10 text-white font-bold' : 'text-white/70 hover:bg-white/5 hover:text-white'}`}>
-            <ShoppingBag className="w-5 h-5" /> Gestión de Pedidos
-          </button>
-          <button onClick={() => setActiveTab('catalogo')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${activeTab === 'catalogo' ? 'bg-white/10 text-white font-bold' : 'text-white/70 hover:bg-white/5 hover:text-white'}`}>
-            <Box className="w-5 h-5" /> Catálogo
-          </button>
-          <button onClick={() => setActiveTab('diseno')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${activeTab === 'diseno' ? 'bg-white/10 text-white font-bold' : 'text-white/70 hover:bg-white/5 hover:text-white'}`}>
-            <Palette className="w-5 h-5" /> Diseño y Temática
-          </button>
-          <button onClick={() => setActiveTab('agenda')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${activeTab === 'agenda' ? 'bg-white/10 text-white font-bold' : 'text-white/70 hover:bg-white/5 hover:text-white'}`}>
-            <Calendar className="w-5 h-5" /> Agenda de Citas
-          </button>
-          <button onClick={() => setActiveTab('perfil')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${activeTab === 'perfil' ? 'bg-white/10 text-white font-bold' : 'text-white/70 hover:bg-white/5 hover:text-white'}`}>
-            <User className="w-5 h-5" /> Mi Perfil
-          </button>
+          <button onClick={() => setActiveTab('pedidos')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors cursor-pointer ${activeTab === 'pedidos' ? 'bg-white/10 text-white font-bold' : 'text-white/70 hover:bg-white/5 hover:text-white'}`}><ShoppingBag className="w-5 h-5" /> Gestión de Pedidos</button>
+          <button onClick={() => setActiveTab('catalogo')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors cursor-pointer ${activeTab === 'catalogo' ? 'bg-white/10 text-white font-bold' : 'text-white/70 hover:bg-white/5 hover:text-white'}`}><Box className="w-5 h-5" /> Catálogo</button>
+          <button onClick={() => setActiveTab('diseno')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors cursor-pointer ${activeTab === 'diseno' ? 'bg-white/10 text-white font-bold' : 'text-white/70 hover:bg-white/5 hover:text-white'}`}><Palette className="w-5 h-5" /> Diseño y Temática</button>
+          <button onClick={() => setActiveTab('agenda')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors cursor-pointer ${activeTab === 'agenda' ? 'bg-white/10 text-white font-bold' : 'text-white/70 hover:bg-white/5 hover:text-white'}`}><Calendar className="w-5 h-5" /> Agenda de Entregas</button>
+          <button onClick={() => setActiveTab('perfil')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors cursor-pointer ${activeTab === 'perfil' ? 'bg-white/10 text-white font-bold' : 'text-white/70 hover:bg-white/5 hover:text-white'}`}><User className="w-5 h-5" /> Mi Perfil</button>
         </nav>
 
         <div className="p-4 border-t border-white/10">
-          <button onClick={() => setIsAuthenticated(false)} className="w-full flex items-center gap-3 px-4 py-3 text-red-300 hover:bg-red-500/10 hover:text-red-200 rounded-xl transition-colors mb-2">
-            <LogOut className="w-5 h-5" /> Cerrar Sesión
-          </button>
-          <button onClick={closePanel} className="w-full flex items-center justify-center gap-2 px-4 py-3 text-stone-300 hover:bg-white/10 hover:text-white rounded-xl transition-colors text-sm">
-            <Store className="w-4 h-4" /> Volver a la Tienda
-          </button>
+          <button onClick={() => setIsAuthenticated(false)} className="w-full flex items-center gap-3 px-4 py-3 text-red-300 hover:bg-red-500/10 hover:text-red-200 rounded-xl transition-colors mb-2 cursor-pointer"><LogOut className="w-5 h-5" /> Cerrar Sesión</button>
+          <button onClick={closePanel} className="w-full flex items-center justify-center gap-2 px-4 py-3 text-stone-300 hover:bg-white/10 hover:text-white rounded-xl transition-colors text-sm cursor-pointer"><Store className="w-4 h-4" /> Volver a la Tienda</button>
         </div>
       </aside>
 
@@ -214,7 +178,7 @@ export default function AdminPanel({ isOpen = true, onClose, onBackToStore }: Ad
             {activeTab === 'pedidos' && 'Gestión de Pedidos'}
             {activeTab === 'catalogo' && 'Catálogo de Productos'}
             {activeTab === 'diseno' && 'Diseño de la Tienda'}
-            {activeTab === 'agenda' && 'Mi Agenda de Citas'}
+            {activeTab === 'agenda' && 'Mi Agenda de Entregas'}
             {activeTab === 'perfil' && 'Mi Perfil'}
           </h1>
         </header>
@@ -226,86 +190,34 @@ export default function AdminPanel({ isOpen = true, onClose, onBackToStore }: Ad
               <h2 className="text-xl font-bold text-[#1a2b4c]">Fondos Animados Estacionales</h2>
             </div>
             <p className="text-sm text-stone-600 mb-6">Selecciona la temática que verán tus clientes al entrar a la tienda. El cambio se aplica instantáneamente.</p>
-            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <button onClick={() => handleThemeChange('spring')} className={`p-4 rounded-xl border-2 text-left flex items-center gap-4 transition-all ${currentTheme === 'spring' ? 'border-[#ff4d94] bg-pink-50' : 'border-stone-200 hover:border-stone-300'}`}>
-                <div className="text-3xl">🌸</div>
-                <div>
-                  <h3 className="font-bold text-stone-900">Primavera (Atelier Original)</h3>
-                  <p className="text-xs text-stone-500">Pétalos rosas, flores y hojas verdes</p>
-                </div>
-              </button>
-
-              <button onClick={() => handleThemeChange('valentine')} className={`p-4 rounded-xl border-2 text-left flex items-center gap-4 transition-all ${currentTheme === 'valentine' ? 'border-red-400 bg-red-50' : 'border-stone-200 hover:border-stone-300'}`}>
-                <div className="text-3xl">💖</div>
-                <div>
-                  <h3 className="font-bold text-stone-900">San Valentín</h3>
-                  <p className="text-xs text-stone-500">Corazones, rosas y destellos</p>
-                </div>
-              </button>
-
-              <button onClick={() => handleThemeChange('easter')} className={`p-4 rounded-xl border-2 text-left flex items-center gap-4 transition-all ${currentTheme === 'easter' ? 'border-blue-400 bg-blue-50' : 'border-stone-200 hover:border-stone-300'}`}>
-                <div className="text-3xl">🐰</div>
-                <div>
-                  <h3 className="font-bold text-stone-900">Pascua</h3>
-                  <p className="text-xs text-stone-500">Conejitos, huevos y flores primaverales</p>
-                </div>
-              </button>
-
-              <button onClick={() => handleThemeChange('halloween')} className={`p-4 rounded-xl border-2 text-left flex items-center gap-4 transition-all ${currentTheme === 'halloween' ? 'border-orange-400 bg-orange-50' : 'border-stone-200 hover:border-stone-300'}`}>
-                <div className="text-3xl">🎃</div>
-                <div>
-                  <h3 className="font-bold text-stone-900">Halloween</h3>
-                  <p className="text-xs text-stone-500">Calabazas, murciélagos y hojas de otoño</p>
-                </div>
-              </button>
-
-              <button onClick={() => handleThemeChange('christmas')} className={`p-4 rounded-xl border-2 text-left flex items-center gap-4 transition-all ${currentTheme === 'christmas' ? 'border-emerald-500 bg-emerald-50' : 'border-stone-200 hover:border-stone-300'}`}>
-                <div className="text-3xl">🎅</div>
-                <div>
-                  <h3 className="font-bold text-stone-900">Navideño</h3>
-                  <p className="text-xs text-stone-500">Santa Claus, renos, regalos y nieve</p>
-                </div>
-              </button>
+              <button onClick={() => handleThemeChange('spring')} className={`p-4 rounded-xl border-2 text-left flex items-center gap-4 transition-all cursor-pointer ${currentTheme === 'spring' ? 'border-[#ff4d94] bg-pink-50' : 'border-stone-200 hover:border-stone-300'}`}><div className="text-3xl">🌸</div><div><h3 className="font-bold text-stone-900">Primavera (Atelier Original)</h3><p className="text-xs text-stone-500">Pétalos rosas, flores y hojas verdes</p></div></button>
+              <button onClick={() => handleThemeChange('valentine')} className={`p-4 rounded-xl border-2 text-left flex items-center gap-4 transition-all cursor-pointer ${currentTheme === 'valentine' ? 'border-red-400 bg-red-50' : 'border-stone-200 hover:border-stone-300'}`}><div className="text-3xl">💖</div><div><h3 className="font-bold text-stone-900">San Valentín</h3><p className="text-xs text-stone-500">Corazones, rosas y destellos</p></div></button>
+              <button onClick={() => handleThemeChange('easter')} className={`p-4 rounded-xl border-2 text-left flex items-center gap-4 transition-all cursor-pointer ${currentTheme === 'easter' ? 'border-blue-400 bg-blue-50' : 'border-stone-200 hover:border-stone-300'}`}><div className="text-3xl">🐰</div><div><h3 className="font-bold text-stone-900">Pascua</h3><p className="text-xs text-stone-500">Conejitos, huevos y flores primaverales</p></div></button>
+              <button onClick={() => handleThemeChange('halloween')} className={`p-4 rounded-xl border-2 text-left flex items-center gap-4 transition-all cursor-pointer ${currentTheme === 'halloween' ? 'border-orange-400 bg-orange-50' : 'border-stone-200 hover:border-stone-300'}`}><div className="text-3xl">🎃</div><div><h3 className="font-bold text-stone-900">Halloween</h3><p className="text-xs text-stone-500">Calabazas, murciélagos y hojas de otoño</p></div></button>
+              <button onClick={() => handleThemeChange('christmas')} className={`p-4 rounded-xl border-2 text-left flex items-center gap-4 transition-all cursor-pointer ${currentTheme === 'christmas' ? 'border-emerald-500 bg-emerald-50' : 'border-stone-200 hover:border-stone-300'}`}><div className="text-3xl">🎅</div><div><h3 className="font-bold text-stone-900">Navideño</h3><p className="text-xs text-stone-500">Santa Claus, renos, regalos y nieve</p></div></button>
             </div>
           </div>
         )}
 
         {activeTab === 'perfil' && (
-          <div className="bg-white rounded-2xl shadow-sm border border-stone-200 max-w-3xl overflow-hidden">
-            <div className="p-8">
-              <h2 className="text-xl font-bold text-[#1a2b4c] mb-6 border-b border-stone-100 pb-4">Personaliza tu Perfil Público</h2>
-              <form onSubmit={handleSaveProfile} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-semibold text-stone-700 mb-1">Nombre Público</label>
-                    <input type="text" value={profileName} onChange={(e) => setProfileName(e.target.value)} className="w-full border border-stone-300 rounded-lg px-4 py-2.5 focus:outline-none focus:border-[#1a2b4c]" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-stone-700 mb-1">Cargo / Especialidad</label>
-                    <input type="text" value={profileRole} onChange={(e) => setProfileRole(e.target.value)} className="w-full border border-stone-300 rounded-lg px-4 py-2.5 focus:outline-none focus:border-[#1a2b4c]" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-stone-700 mb-1">Usuario de Acceso</label>
-                    <input type="text" value={profileUser} onChange={(e) => setProfileUser(e.target.value)} className="w-full border border-stone-300 rounded-lg px-4 py-2.5 focus:outline-none focus:border-[#1a2b4c]" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-stone-700 mb-1">WhatsApp de Contacto</label>
-                    <input type="text" value={profileWhatsApp} onChange={(e) => setProfileWhatsApp(e.target.value)} className="w-full border border-stone-300 rounded-lg px-4 py-2.5 focus:outline-none focus:border-[#1a2b4c]" />
-                  </div>
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-semibold text-stone-700 mb-1">Contraseña de Acceso</label>
-                    <input type="text" value={profilePassword} onChange={(e) => setProfilePassword(e.target.value)} className="w-full md:w-1/2 border border-stone-300 rounded-lg px-4 py-2.5 focus:outline-none focus:border-[#1a2b4c]" />
-                  </div>
+          <div className="bg-white rounded-2xl shadow-sm border border-stone-200 max-w-3xl overflow-hidden p-8">
+            <h2 className="text-xl font-bold text-[#1a2b4c] mb-6 border-b border-stone-100 pb-4">Personaliza tu Perfil Público</h2>
+            <form onSubmit={handleSaveProfile} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div><label className="block text-sm font-semibold text-stone-700 mb-1">Nombre Público</label><input type="text" value={profileName} onChange={(e) => setProfileName(e.target.value)} className="w-full border border-stone-300 rounded-lg px-4 py-2.5 focus:outline-none focus:border-[#1a2b4c]" /></div>
+                <div><label className="block text-sm font-semibold text-stone-700 mb-1">Cargo / Especialidad</label><input type="text" value={profileRole} onChange={(e) => setProfileRole(e.target.value)} className="w-full border border-stone-300 rounded-lg px-4 py-2.5 focus:outline-none focus:border-[#1a2b4c]" /></div>
+                <div><label className="block text-sm font-semibold text-stone-700 mb-1">Usuario de Acceso</label><input type="text" value={profileUser} onChange={(e) => setProfileUser(e.target.value)} className="w-full border border-stone-300 rounded-lg px-4 py-2.5 focus:outline-none focus:border-[#1a2b4c]" /></div>
+                <div><label className="block text-sm font-semibold text-stone-700 mb-1">WhatsApp de Contacto</label><input type="text" value={profileWhatsApp} onChange={(e) => setProfileWhatsApp(e.target.value)} className="w-full border border-stone-300 rounded-lg px-4 py-2.5 focus:outline-none focus:border-[#1a2b4c]" /></div>
+                <div className="md:col-span-2"><label className="block text-sm font-semibold text-stone-700 mb-1">Contraseña de Acceso</label><input type="text" value={profilePassword} onChange={(e) => setProfilePassword(e.target.value)} className="w-full md:w-1/2 border border-stone-300 rounded-lg px-4 py-2.5 focus:outline-none focus:border-[#1a2b4c]" /></div>
+              </div>
+              <div className="flex justify-end pt-4 border-t border-stone-100">
+                <div className="flex items-center gap-4">
+                  {showProfileToast && <span className="text-sm font-semibold text-green-600 flex items-center gap-1"><CheckCircle2 className="w-4 h-4" /> ¡Cambios guardados!</span>}
+                  <button type="submit" className="px-6 py-2.5 bg-[#1a2b4c] text-white font-bold rounded-lg hover:bg-[#111c33] transition-colors cursor-pointer">Guardar Cambios</button>
                 </div>
-                <div className="flex justify-end pt-4 border-t border-stone-100">
-                  <div className="flex items-center gap-4">
-                    {showProfileToast && <span className="text-sm font-semibold text-green-600 flex items-center gap-1"><CheckCircle2 className="w-4 h-4" /> ¡Cambios guardados!</span>}
-                    <button type="submit" className="px-6 py-2.5 bg-[#1a2b4c] text-white font-bold rounded-lg hover:bg-[#111c33] transition-colors">Guardar Cambios</button>
-                  </div>
-                </div>
-              </form>
-            </div>
+              </div>
+            </form>
           </div>
         )}
 
@@ -313,17 +225,12 @@ export default function AdminPanel({ isOpen = true, onClose, onBackToStore }: Ad
           <div className="space-y-6">
             <div className="flex justify-between items-center bg-white p-4 rounded-xl border border-stone-200 shadow-sm">
               <h3 className="font-bold text-lg text-stone-800">Catálogo de Productos</h3>
-              <button className="bg-[#4bc3cd] text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 hover:bg-[#3ba8b2] transition-colors">
-                <Plus className="w-4 h-4" /> Nuevo Producto
-              </button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
               {PRODUCTS.map(prod => (
                 <div key={prod.id} className="bg-white p-5 rounded-2xl shadow-sm border border-stone-200 hover:border-stone-300 transition-all flex flex-col">
                   <div className="flex justify-between items-start mb-4">
-                    <div className="w-10 h-10 bg-[#eaf4f4] rounded-xl flex items-center justify-center text-[#4bc3cd]">
-                      <Box className="w-5 h-5" />
-                    </div>
+                    <div className="w-10 h-10 bg-[#eaf4f4] rounded-xl flex items-center justify-center text-[#4bc3cd]"><Box className="w-5 h-5" /></div>
                   </div>
                   <h4 className="font-bold text-stone-900 text-lg mb-1 leading-tight">{prod.name}</h4>
                   <p className="font-bold text-xl text-[#1a2b4c] mb-4">${prod.basePrice.toFixed(2)} <span className="text-xs text-stone-500 font-normal">USD</span></p>
@@ -336,18 +243,31 @@ export default function AdminPanel({ isOpen = true, onClose, onBackToStore }: Ad
         {activeTab === 'agenda' && (
           <div className="bg-white rounded-2xl shadow-sm border border-stone-200 p-6">
             <div className="flex justify-between items-center mb-6">
-              <h3 className="font-bold text-xl text-stone-800">Octubre 2026</h3>
+              <h3 className="font-bold text-xl text-stone-800 uppercase capitalize">{monthName}</h3>
+              <p className="text-xs text-stone-500">Los pedidos agendados aparecerán aquí automáticamente</p>
             </div>
             <div className="border border-stone-200 rounded-xl overflow-hidden">
-              <div className="grid grid-cols-7 bg-stone-50 border-b border-stone-200 text-center text-sm font-semibold text-stone-600">
-                {['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map(d => <div key={d} className="py-3 border-r border-stone-200 last:border-r-0">{d}</div>)}
+              <div className="grid grid-cols-7 bg-[#1a2b4c] text-white text-center text-sm font-semibold">
+                {['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map(d => <div key={d} className="py-3 border-r border-white/20 last:border-r-0">{d}</div>)}
               </div>
-              <div className="grid grid-cols-7 text-right text-stone-500 text-sm">
-                {Array.from({length: 31}).map((_, i) => (
-                  <div key={i} className="min-h-[100px] p-2 border-b border-r border-stone-100 bg-white">
-                    {i + 1}
-                  </div>
-                ))}
+              <div className="grid grid-cols-7 bg-stone-50 text-right text-stone-500 text-sm">
+                {blanks.map((_, i) => <div key={`b-${i}`} className="min-h-[100px] p-2 border-b border-r border-stone-200 bg-stone-100/50"></div>)}
+                {days.map(day => {
+                  const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                  const dayOrders = orders.filter(o => o.deliveryDate === dateStr);
+                  return (
+                    <div key={day} className={`min-h-[100px] p-2 border-b border-r border-stone-200 ${dayOrders.length > 0 ? 'bg-amber-50' : 'bg-white'}`}>
+                      <span className="font-bold text-stone-800">{day}</span>
+                      <div className="mt-1 flex flex-col gap-1 text-left">
+                        {dayOrders.map(o => (
+                          <div key={o.id} className="text-[10px] bg-[#1a2b4c] text-white px-1.5 py-1 rounded truncate cursor-pointer hover:bg-[#2c4475] transition-colors shadow-sm" title={o.customerName} onClick={() => setInspectingOrder(o)}>
+                            📦 Entregar a: {o.customerName.split(' ')[0]}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -358,13 +278,7 @@ export default function AdminPanel({ isOpen = true, onClose, onBackToStore }: Ad
             <div className="p-6 border-b border-stone-200 flex justify-between items-center">
               <div className="relative">
                 <Search className="absolute left-3 top-2.5 text-stone-400 w-5 h-5" />
-                <input
-                  type="text"
-                  placeholder="Buscar cliente o pedido..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 pr-4 py-2 border border-stone-300 rounded-lg text-sm focus:outline-none focus:border-[#1a2b4c] w-64"
-                />
+                <input type="text" placeholder="Buscar cliente o pedido..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10 pr-4 py-2 border border-stone-300 rounded-lg text-sm focus:outline-none focus:border-[#1a2b4c] w-64" />
               </div>
               <span className="text-sm text-stone-500 font-semibold">{filteredOrders.length} Pedidos</span>
             </div>
@@ -375,7 +289,8 @@ export default function AdminPanel({ isOpen = true, onClose, onBackToStore }: Ad
                   <tr>
                     <th className="p-4 font-semibold">Cliente</th>
                     <th className="p-4 font-semibold">Producto Principal</th>
-                    <th className="p-4 font-semibold">Fecha</th>
+                    {/* COLUMNA ACTUALIZADA: Ahora se llama Agendar Entrega */}
+                    <th className="p-4 font-semibold text-amber-700">🗓️ Agendar Entrega</th>
                     <th className="p-4 font-semibold">Total</th>
                     <th className="p-4 font-semibold">Estado</th>
                     <th className="p-4 font-semibold text-center">Acción</th>
@@ -384,28 +299,27 @@ export default function AdminPanel({ isOpen = true, onClose, onBackToStore }: Ad
                 <tbody className="divide-y divide-stone-100">
                   {filteredOrders.map((ord) => (
                     <tr key={ord.id} className="hover:bg-stone-50 transition-colors">
+                      <td className="p-4"><p className="font-bold text-stone-800">{ord.customerName}</p><p className="text-xs text-stone-500 flex items-center gap-1 mt-1"><Phone className="w-3 h-3"/>{ord.customerWhatsApp}</p></td>
+                      <td className="p-4"><p className="font-semibold text-sm">{ord.items[0]?.product.name}</p></td>
+                      
+                      {/* CELDA ACTUALIZADA: Input de fecha integrado directamente en la tabla */}
                       <td className="p-4">
-                        <p className="font-bold text-stone-800">{ord.customerName}</p>
-                        <p className="text-xs text-stone-500 flex items-center gap-1 mt-1"><Phone className="w-3 h-3"/>{ord.customerWhatsApp}</p>
+                        <input 
+                          type="date" 
+                          title="Selecciona para agregar a la agenda"
+                          value={ord.deliveryDate || ''} 
+                          onChange={(e) => handleDeliveryDateChange(ord.id, e.target.value)}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-bold outline-none cursor-pointer border transition-colors ${
+                            ord.deliveryDate 
+                              ? 'bg-amber-100 text-amber-800 border-amber-300' 
+                              : 'bg-white text-stone-500 border-stone-300 hover:bg-stone-100'
+                          }`}
+                        />
                       </td>
-                      <td className="p-4">
-                        <p className="font-semibold text-sm">{ord.items[0]?.product.name} {ord.items.length > 1 ? `(+${ord.items.length - 1})` : ''}</p>
-                        {ord.items[0]?.customization.customText && (
-                          <p className="text-xs text-[#b90538] font-bold mt-1">"{ord.items[0].customization.customText}"</p>
-                        )}
-                      </td>
-                      <td className="p-4 text-sm font-semibold">{new Date(ord.createdAt).toLocaleDateString()}</td>
+
                       <td className="p-4 text-sm font-bold text-stone-800">${ord.total.toFixed(2)}</td>
                       <td className="p-4">
-                        <select
-                          value={ord.status}
-                          onChange={(e) => handleStatusChange(ord.id, e.target.value as OrderStatus)}
-                          className={`px-3 py-1.5 rounded-full text-xs font-bold outline-none cursor-pointer border ${
-                            ord.status === 'pending' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
-                            ord.status === 'in_production' ? 'bg-blue-50 text-blue-700 border-blue-200' :
-                            'bg-green-50 text-green-700 border-green-200'
-                          }`}
-                        >
+                        <select value={ord.status} onChange={(e) => handleStatusChange(ord.id, e.target.value as OrderStatus)} className="px-3 py-1.5 rounded-full text-xs font-bold outline-none cursor-pointer border bg-stone-50 border-stone-200 text-stone-700">
                           <option value="pending">Pendiente</option>
                           <option value="in_production">En Taller</option>
                           <option value="dispatched">Despachado</option>
@@ -414,12 +328,8 @@ export default function AdminPanel({ isOpen = true, onClose, onBackToStore }: Ad
                       </td>
                       <td className="p-4 text-center">
                         <div className="flex justify-center items-center gap-2">
-                          <button onClick={() => setInspectingOrder(ord)} className="p-2 text-stone-400 hover:text-[#1a2b4c] bg-stone-100 hover:bg-stone-200 rounded-lg transition-colors" title="Ver detalle">
-                            <Eye className="w-4 h-4" />
-                          </button>
-                          <button onClick={() => handleDeleteOrder(ord.id)} className="p-2 text-red-400 hover:text-red-700 bg-red-50 hover:bg-red-100 rounded-lg transition-colors" title="Eliminar pedido">
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                          <button onClick={() => setInspectingOrder(ord)} className="p-2 text-stone-400 hover:text-[#1a2b4c] bg-stone-100 hover:bg-stone-200 rounded-lg transition-colors cursor-pointer"><Eye className="w-4 h-4" /></button>
+                          <button onClick={() => handleDeleteOrder(ord.id)} className="p-2 text-red-400 hover:text-red-700 bg-red-50 hover:bg-red-100 rounded-lg transition-colors cursor-pointer"><Trash2 className="w-4 h-4" /></button>
                         </div>
                       </td>
                     </tr>
@@ -434,18 +344,9 @@ export default function AdminPanel({ isOpen = true, onClose, onBackToStore }: Ad
       <AnimatePresence>
         {inspectingOrder && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-stone-900/60 backdrop-blur-sm">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-2xl max-w-lg w-full p-8 shadow-2xl relative"
-            >
-              <button onClick={() => setInspectingOrder(null)} className="absolute top-4 right-4 p-2 text-stone-400 hover:text-stone-700 bg-stone-100 rounded-full">
-                <X className="w-5 h-5" />
-              </button>
-              
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="bg-white rounded-2xl max-w-lg w-full p-8 shadow-2xl relative">
+              <button onClick={() => setInspectingOrder(null)} className="absolute top-4 right-4 p-2 text-stone-400 hover:text-stone-700 bg-stone-100 rounded-full cursor-pointer"><X className="w-5 h-5" /></button>
               <h3 className="text-xl font-bold text-[#1a2b4c] mb-6 border-b border-stone-100 pb-3">Detalle del Pedido #{inspectingOrder.id}</h3>
-              
               <div className="space-y-4 text-sm text-stone-700">
                 <div>
                   <p className="text-xs font-bold text-stone-400 uppercase tracking-wider mb-1">Cliente</p>
@@ -454,30 +355,21 @@ export default function AdminPanel({ isOpen = true, onClose, onBackToStore }: Ad
                   {inspectingOrder.notes && <p className="text-stone-500 mt-1 italic">"{inspectingOrder.notes}"</p>}
                 </div>
                 
-                <div className="max-h-48 overflow-y-auto space-y-2 pr-2">
+                <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 flex justify-between items-center">
+                  <p className="text-xs font-bold text-amber-700 uppercase tracking-wider">Fecha Agendada:</p>
+                  <span className="font-bold text-amber-900 bg-amber-100 px-3 py-1 rounded-md">
+                    {inspectingOrder.deliveryDate ? new Date(inspectingOrder.deliveryDate).toLocaleDateString() : 'Aún sin agendar'}
+                  </span>
+                </div>
+
+                <div className="max-h-32 overflow-y-auto space-y-2 pr-2">
                   {inspectingOrder.items.map((item, idx) => (
                     <div key={idx} className="p-4 bg-stone-50 rounded-xl border border-stone-200">
                       <p className="text-xs font-bold text-stone-400 uppercase tracking-wider mb-1">Pieza {idx + 1}: {item.product.name} (x{item.quantity})</p>
-                      {item.customization.customText && (
-                        <p className="text-[#b90538] font-bold text-base mt-1">"{item.customization.customText}"</p>
-                      )}
-                      {item.customization.secondaryText && (
-                        <p className="text-stone-600 font-medium text-xs mt-1">{item.customization.secondaryText}</p>
-                      )}
+                      {item.customization.customText && <p className="text-[#b90538] font-bold text-base mt-1">"{item.customization.customText}"</p>}
                       <p className="text-xs mt-1 text-stone-500">Color Base: <span className="font-medium text-stone-700">{item.customization.productColor}</span></p>
                     </div>
                   ))}
-                </div>
-
-                <div className="flex justify-between items-center p-4 bg-[#1a2b4c] text-white rounded-xl mt-4">
-                  <div>
-                    <p className="text-xs text-white/70 font-bold uppercase">Total Pagado</p>
-                    <p className="font-bold text-xl">${inspectingOrder.total.toFixed(2)}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xs text-white/70 font-bold uppercase">Fecha de Orden</p>
-                    <p className="font-semibold">{new Date(inspectingOrder.createdAt).toLocaleDateString()}</p>
-                  </div>
                 </div>
               </div>
             </motion.div>

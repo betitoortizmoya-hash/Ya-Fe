@@ -77,4 +77,5 @@ export interface Order {
   total: number;
   status: OrderStatus;
   createdAt: string;
+  deliveryDate?: string; // Nuevo campo para la agenda
 }
